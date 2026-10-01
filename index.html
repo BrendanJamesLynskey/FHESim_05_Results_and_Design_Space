@@ -1,0 +1,1725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FHE Accelerator Simulators 05 — Results and the Design Space</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,700&family=Geist+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #1c1815;
+            --bg-card: #231e1a;
+            --bg-code: #2b2520;
+            --text-primary: #efe8dc;
+            --text-secondary: #a2978b;
+            --accent: #aabd59;
+            --accent-dim: #aabd5944;
+            --accent-glow: #aabd5933;
+            --border: #3a322b;
+            --font-display: 'Bricolage Grotesque', sans-serif;
+            --font-mono: 'Geist Mono', 'Geist Mono', monospace;
+            --font-body: 'Instrument Sans', sans-serif;
+            --max-width: 900px;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            font-size: 17px;
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ── Header ── */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .hero > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .series-label {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--accent);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+        }
+
+        .hero h1 {
+            font-family: var(--font-display);
+            font-size: clamp(2rem, 5vw, 3.2rem);
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.2;
+            margin-bottom: 1rem;
+        }
+
+        .hero h1 .accent {
+            color: var(--accent);
+        }
+
+        .hero .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin-bottom: 2rem;
+        }
+
+        /* ── Tag Pills ── */
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .tag {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            background: var(--accent-dim);
+            white-space: nowrap;
+        }
+
+        /* ── Pipeline Flow Bar ── */
+        .pipeline {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            margin-bottom: 1rem;
+            max-width: var(--max-width);
+        }
+
+        .pipeline-step {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            padding: 0.3rem 0.7rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        .pipeline-arrow {
+            color: var(--accent);
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        /* ── Slides ── */
+        .slide {
+            min-height: 100vh;
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 4rem 1.5rem;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .slide-number {
+            font-family: var(--font-display);
+            font-size: 5rem;
+            font-weight: 700;
+            color: var(--accent-dim);
+            position: absolute;
+            top: 2rem;
+            right: 1.5rem;
+            line-height: 1;
+            user-select: none;
+        }
+
+        .slide h2 {
+            font-family: var(--font-display);
+            font-size: 1.9rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 1.5rem;
+            line-height: 1.25;
+        }
+
+        .slide h3 {
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .slide p {
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .slide p strong {
+            color: var(--text-primary);
+        }
+
+        .slide ul, .slide ol {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+            color: var(--text-secondary);
+        }
+
+        .slide li {
+            margin-bottom: 0.4rem;
+        }
+
+        .slide li strong {
+            color: var(--text-primary);
+        }
+
+        /* ── Code Blocks ── */
+        .code-block {
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin: 1.25rem 0;
+            overflow: hidden;
+        }
+
+        .code-header {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--accent);
+            background: rgba(170,189,89,0.08);
+            padding: 0.4rem 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .code-block pre {
+            margin: 0;
+            padding: 1rem;
+            overflow-x: auto;
+        }
+
+        .code-block code {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #dad1c5;
+        }
+
+        /* Syntax highlighting (manual) */
+        .kw { color: #de805a; }
+        .fn { color: #d7bbdf; }
+        .str { color: #bcdbd4; }
+        .cm { color: #a2978b; font-style: italic; }
+        .num { color: #97cdc6; }
+        .type { color: #e3b174; }
+        .dir { color: #de805a; }
+        .mac { color: #e3b174; }
+
+        /* ── Tables ── */
+        .table-wrap {
+            overflow-x: auto;
+            margin: 1.25rem 0;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background: var(--bg-code);
+            color: var(--accent);
+            font-weight: 600;
+            text-align: left;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            font-family: var(--font-display);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:nth-child(even) td {
+            background: rgba(35,30,26,0.5);
+        }
+
+        /* ── Diagrams ── */
+        .diagram-flow {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .diagram-box {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .diagram-box.accent {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(170,189,89,0.08);
+        }
+
+        .diagram-box.dim {
+            color: var(--text-secondary);
+            border-color: var(--border);
+        }
+
+        .diagram-arrow {
+            color: var(--accent);
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        /* Vertical flow diagrams */
+        .diagram-vertical {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.3rem;
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .diagram-vertical .diagram-arrow {
+            font-size: 1.1rem;
+        }
+
+        /* Nested hierarchy diagram */
+        .hierarchy {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .hierarchy-level {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .hierarchy-label {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            min-width: 80px;
+            text-align: right;
+        }
+
+        .hierarchy-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+
+        .hierarchy-item {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        .hierarchy-item.accent {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(170,189,89,0.08);
+        }
+
+        /* Grid diagram */
+        .diagram-grid {
+            display: grid;
+            gap: 0.75rem;
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .diagram-grid.cols-2 {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .diagram-grid.cols-3 {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+
+        .diagram-panel {
+            padding: 1rem;
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+
+        .diagram-panel.accent-border {
+            border-left: 3px solid var(--accent);
+        }
+
+        .diagram-panel h4 {
+            font-family: var(--font-display);
+            font-size: 1rem;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+
+        .diagram-panel p, .diagram-panel ul {
+            font-size: 0.85rem;
+        }
+
+        /* ── Callout Boxes ── */
+        .callout {
+            background: var(--bg-card);
+            border-left: 3px solid var(--accent);
+            border-radius: 0 8px 8px 0;
+            padding: 1rem 1.25rem;
+            margin: 1.25rem 0;
+        }
+
+        .callout p {
+            margin-bottom: 0;
+        }
+
+        .callout .callout-label {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.3rem;
+        }
+
+        /* ── Tier Visual ── */
+        .tier-visual {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .tier-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .tier-label {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            min-width: 90px;
+            text-align: right;
+        }
+
+        .tier-fill {
+            height: 32px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            padding: 0 0.75rem;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            white-space: nowrap;
+            transition: width 0.6s ease;
+        }
+
+        .tier-cost {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            min-width: 70px;
+        }
+
+        /* ── Contents list ── */
+        .contents-list {
+            list-style: none;
+            padding-left: 0;
+            counter-reset: contents;
+        }
+
+        .contents-list li {
+            counter-increment: contents;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .contents-list li:last-child {
+            border-bottom: none;
+        }
+
+        .contents-list li::before {
+            content: counter(contents, decimal-leading-zero);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--accent);
+            min-width: 2rem;
+        }
+
+        .contents-list a {
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .contents-list a:hover {
+            color: var(--accent);
+        }
+
+        /* ── Footer ── */
+        .footer {
+            text-align: center;
+            padding: 3rem 1.5rem;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border);
+            max-width: var(--max-width);
+            margin: 0 auto;
+        }
+
+        .footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 640px) {
+            .slide {
+                padding: 3rem 1rem;
+                min-height: auto;
+            }
+
+            .slide-number {
+                font-size: 3rem;
+                top: 1.5rem;
+                right: 1rem;
+            }
+
+            .slide h2 {
+                font-size: 1.5rem;
+            }
+
+            .diagram-grid.cols-2,
+            .diagram-grid.cols-3 {
+                grid-template-columns: 1fr;
+            }
+
+            .pipeline {
+                gap: 0.15rem;
+            }
+
+            .pipeline-step {
+                font-size: 0.6rem;
+                padding: 0.2rem 0.4rem;
+            }
+
+            .hero h1 {
+                font-size: 1.8rem;
+            }
+
+            table {
+                font-size: 0.78rem;
+            }
+
+            .tier-label {
+                min-width: 60px;
+                font-size: 0.65rem;
+            }
+
+            .tier-fill {
+                font-size: 0.6rem;
+                height: 26px;
+            }
+        }
+
+        /* ── Interactive controls (added for Local LLM series) ── */
+        .control-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin: 1.25rem 0;
+        }
+        .control-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+        .control-row label {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            min-width: 180px;
+        }
+        .control-row input[type="range"] {
+            flex: 1;
+            min-width: 160px;
+            accent-color: var(--accent);
+        }
+        .control-row input[type="number"],
+        .control-row select {
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 4px;
+            padding: 0.3rem 0.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+        }
+        .control-row .val {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--accent);
+            min-width: 80px;
+            text-align: right;
+        }
+        .btn {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            padding: 0.4rem 0.9rem;
+            background: var(--accent-dim);
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .btn:hover { background: rgba(170,189,89,0.2); }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn.secondary {
+            background: var(--bg-code);
+            color: var(--text-secondary);
+            border-color: var(--border);
+        }
+        .result-box {
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--accent);
+            border-radius: 4px;
+            padding: 0.75rem 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            margin-top: 0.75rem;
+        }
+        .result-box .line-label { color: var(--text-secondary); }
+        .result-box .line-val   { color: var(--accent); font-weight: 600; }
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+        .metric {
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.6rem 0.8rem;
+            text-align: center;
+        }
+        .metric .metric-label {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        .metric .metric-value {
+            font-family: var(--font-display);
+            font-size: 1.25rem;
+            color: var(--accent);
+            font-weight: 600;
+            margin-top: 0.2rem;
+        }
+
+        /* Canvas / SVG containers */
+        .canvas-wrap {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1.25rem 0;
+            overflow-x: auto;
+        }
+        .canvas-wrap canvas,
+        .canvas-wrap svg {
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+        }
+
+        /* Small inline badge */
+        .badge {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            padding: 0.1rem 0.45rem;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            vertical-align: middle;
+            margin-left: 0.3rem;
+        }
+        .badge.ok    { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+        .badge.warn  { border-color: #e3b174; color: #e3b174; background: rgba(227,177,116,0.08); }
+        .badge.bad   { border-color: #de805a; color: #de805a; background: rgba(222,128,90,0.08); }
+
+
+        /* ── LLM Inference Simulators additions ── */
+        .canvas-wrap canvas { image-rendering: auto; display: block; width: 100%; height: auto; }
+        .canvas-wrap svg { max-width: 100%; height: auto; }
+        .ladder { display: grid; gap: 0.4rem; margin: 1.25rem 0; }
+        .ladder-row {
+            display: grid; grid-template-columns: 11rem 1fr 7.5rem; gap: 0.75rem; align-items: center;
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px;
+            padding: 0.55rem 0.85rem; font-size: 0.88rem;
+        }
+        .ladder-row .rung { font-family: var(--font-display); font-weight: 600; color: var(--accent); }
+        .ladder-row .speed { font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-secondary); text-align: right; }
+        .res-list { list-style: none; padding: 0; margin: 0.75rem 0; }
+        .res-list li { padding: 0.6rem 0; border-bottom: 1px solid var(--border); font-size: 0.92rem; }
+        .res-list li:last-child { border-bottom: none; }
+        .res-list .what { color: var(--text-secondary); display: block; font-size: 0.86rem; margin-top: 0.15rem; }
+        .res-list a { color: var(--accent); text-decoration: none; }
+        .res-list a:hover { text-decoration: underline; }
+        .qa { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; margin: 0.6rem 0; padding: 0.2rem 1rem; }
+        .qa summary { cursor: pointer; padding: 0.6rem 0; font-weight: 600; }
+        .qa p, .qa ul { margin-bottom: 0.75rem; font-size: 0.92rem; }
+        .sim-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0.4rem 1.25rem; }
+        .chart-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+        .chart-title { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.3rem; }
+        .slide a { color: var(--accent); }
+        @media (max-width: 640px) {
+            .ladder-row { grid-template-columns: 1fr; gap: 0.2rem; }
+            .ladder-row .speed { text-align: left; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="hero">
+    <div class="series-label">FHE Accelerator Simulators &mdash; Presentation 05</div>
+    <h1>Results and the <span class="accent">Design Space</span></h1>
+    <p class="subtitle">What the simulator says: SRAM size against key traffic, the NTT-bound and memory-bound regimes, power and energy per bootstrap under a TDP, the algorithmic acceleration techniques, a design-space sweep, the model's limitations, a reading list (F1, CraterLake, BTS, ARK, SHARP, GPU work, HEIR, OpenFHE, Lattigo) and practice questions.</p>
+
+    <div class="tags">
+        <span class="tag">SRAM sizing</span>
+        <span class="tag">Regimes</span>
+        <span class="tag">Energy / bootstrap</span>
+        <span class="tag">Min-KS</span>
+        <span class="tag">Pareto</span>
+        <span class="tag">Reading list</span>
+    </div>
+
+    <div class="pipeline">
+        <span class="pipeline-step">Sweep</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">Attribute</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">Explain</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">Decide</span>
+    </div>
+</header>
+
+<section class="slide" id="slide-00">
+    <div class="slide-number">00</div>
+    <h2>Topics We'll Cover</h2>
+    <ul class="contents-list">
+        <li><a href="#slide-01">The Questions, and the Ground Rules</a></li>
+        <li><a href="#slide-02">SRAM Against Key Traffic</a></li>
+        <li><a href="#slide-03">NTT-Bound Against Memory-Bound</a></li>
+        <li><a href="#slide-04">Acceleration Techniques</a></li>
+        <li><a href="#slide-05">Power and Energy per Bootstrap</a></li>
+        <li><a href="#slide-06">Interactive: Design-Space Map</a></li>
+        <li><a href="#slide-07">Sweeps, Pareto Fronts and Simulator Speed</a></li>
+        <li><a href="#slide-08">Against Published Numbers</a></li>
+        <li><a href="#slide-09">Limitations and Extensions</a></li>
+        <li><a href="#slide-10">Reading List</a></li>
+        <li><a href="#slide-11">Practice Questions</a></li>
+        <li><a href="#slide-12">What to Take Away</a></li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-01">
+    <div class="slide-number">01</div>
+    <h2>The Questions, and the Ground Rules</h2>
+    <ol>
+        <li><strong>How much on-chip SRAM stops key traffic dominating?</strong></li>
+        <li><strong>When is a design NTT-bound, memory-bound or power-bound?</strong></li>
+        <li><strong>Which algorithmic techniques matter, and on which designs?</strong></li>
+        <li><strong>What does a bootstrap cost in energy</strong> under a power limit?</li>
+    </ol>
+    <div class="callout">
+        <div class="callout-label">Ground rules</div>
+        <p>Every number in this deck comes from <code>examples/results.py</code> in <a href="https://github.com/BrendanJamesLynskey/FHE_Accelerator_Sim">FHE_Accelerator_Sim</a>, which regenerates them all; re-run it after any model change. The workload is one full-slot ark-set bootstrap (N = 2<sup>16</sup>, L = 23, dnum = 4) unless stated. Hardware coefficients are <strong>illustrative</strong>: read ratios, trends and crossovers, not absolute milliseconds.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-02">
+    <div class="slide-number">02</div>
+    <h2>SRAM Against Key Traffic</h2>
+    <div class="table-wrap">
+    <table>
+        <tr><th>SRAM</th><th>Baseline: bootstrap</th><th>key GB</th><th>all HBM GB</th><th>Min-KS + seeded + OTF: bootstrap</th><th>key GB</th><th>all HBM GB</th></tr>
+        <tr><td>128 MiB</td><td>26.98 ms</td><td>9.29</td><td>26.53</td><td>21.22 ms</td><td>4.35</td><td>18.22</td></tr>
+        <tr><td>256 MiB</td><td>17.10 ms</td><td>6.99</td><td>16.37</td><td>8.71 ms</td><td>0.70</td><td>4.33</td></tr>
+        <tr><td>512 MiB</td><td>13.94 ms</td><td>6.74</td><td>12.44</td><td>7.19 ms</td><td>0.58</td><td>0.78</td></tr>
+        <tr><td>1 GiB</td><td>11.69 ms</td><td>6.74</td><td>10.26</td><td>7.19 ms</td><td>0.58</td><td>0.78</td></tr>
+        <tr><td>4 GiB</td><td>11.41 ms</td><td>6.74</td><td>10.02</td><td>7.19 ms</td><td>0.58</td><td>0.78</td></tr>
+    </table>
+    </div>
+    <ul>
+        <li><strong>With the baseline algorithm, no SRAM size stops key traffic.</strong> Each of the 85 rotation keys is used once per bootstrap, so 6.74 GB is compulsory from 512 MiB upwards. More SRAM only removes ciphertext spills.</li>
+        <li><strong>Across bootstraps</strong> keys could be reused, but only if the whole key set fits: two back-to-back bootstraps first share keys at 16 GiB (3.37 GB of keys per bootstrap, 7.99 ms).</li>
+        <li><strong>With key reuse built into the algorithm</strong>, 512 MiB is enough: total HBM traffic falls to 0.78 GB per bootstrap. The answer to "how much SRAM?" depends on the algorithm. That is why ARK co-designed the two, and why the simulator models both.</li>
+        <li>Monotonicity (more SRAM never raises traffic) is a tested property, so <code>search.min_sram</code> can bisect for the smallest adequate size.</li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-03">
+    <div class="slide-number">03</div>
+    <h2>NTT-Bound Against Memory-Bound</h2>
+    <p>Bootstrap latency and verdict as NTT throughput and HBM bandwidth vary (MAC lanes = 2 &times; NTT butterflies; 512 MiB; 250 W TDP):</p>
+    <div class="table-wrap">
+    <table>
+        <tr><th>Baseline algorithm<br>NTT bfly/cycle \ HBM</th><th>500 GB/s</th><th>1 TB/s</th><th>2 TB/s</th><th>4 TB/s</th></tr>
+        <tr><td>512</td><td>34.2 ms memory</td><td>21.9 ms NTT</td><td>17.9 ms NTT</td><td>16.7 ms NTT</td></tr>
+        <tr><td>1,024</td><td>28.8 ms memory</td><td>17.2 ms memory</td><td>11.5 ms NTT</td><td>9.8 ms NTT</td></tr>
+        <tr><td>2,048</td><td>27.0 ms memory</td><td>14.8 ms memory</td><td>8.8 ms memory</td><td>7.4 ms power</td></tr>
+        <tr><td>4,096</td><td>26.4 ms memory</td><td>13.9 ms memory</td><td>7.9 ms memory</td><td>6.7 ms power</td></tr>
+        <tr><td>8,192</td><td>26.3 ms memory</td><td>14.0 ms memory</td><td>8.2 ms memory</td><td>7.3 ms power</td></tr>
+    </table>
+    </div>
+    <div class="table-wrap">
+    <table>
+        <tr><th>Min-KS + seeded + OTF<br>NTT bfly/cycle \ HBM</th><th>500 GB/s</th><th>1 TB/s</th><th>2 TB/s</th><th>4 TB/s</th></tr>
+        <tr><td>512</td><td>28.7 ms NTT</td><td>28.6 ms NTT</td><td>28.6 ms NTT</td><td>28.6 ms NTT</td></tr>
+        <tr><td>2,048</td><td>9.6 ms MAC</td><td>9.5 ms MAC</td><td>9.4 ms MAC</td><td>10.2 ms power</td></tr>
+        <tr><td>8,192</td><td>7.1 ms power</td><td>7.0 ms power</td><td>7.4 ms power</td><td>9.3 ms power</td></tr>
+    </table>
+    </div>
+    <ul>
+        <li><strong>The ridge:</strong> with the baseline algorithm, 1 TB/s supports only about 512&ndash;1,024 butterflies per cycle; beyond that, NTT hardware waits on keys. Reducing key traffic moves the ridge, after which compute and then power bind.</li>
+        <li><strong>A surprise to explain:</strong> faster HBM can be <em>slower</em> (4 TB/s in the second table). The model clocks the chip so that everything at full rate, HBM included, fits the TDP, and 4 TB/s at 30 pJ/byte reserves 120 W. That is an artefact of conservative worst-case clocking, and a real argument for dynamic power management.</li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-04">
+    <div class="slide-number">04</div>
+    <h2>Acceleration Techniques</h2>
+    <div class="table-wrap">
+    <table>
+        <tr><th>Algorithm</th><th>ARK-class: bootstrap</th><th>key GB</th><th>verdict</th><th>Small digital: bootstrap</th><th>verdict</th></tr>
+        <tr><td>Baseline (hoisted BSGS)</td><td>13.94 ms</td><td>6.74</td><td>memory</td><td>17.46 ms</td><td>NTT</td></tr>
+        <tr><td>No hoisting</td><td>14.02 ms</td><td>6.74</td><td>memory</td><td>20.14 ms</td><td>NTT</td></tr>
+        <tr><td>+ Min-KS</td><td>8.51 ms</td><td>1.15</td><td>memory</td><td>21.54 ms</td><td>NTT</td></tr>
+        <tr><td>+ Min-KS + seeded keys</td><td>8.86 ms</td><td>0.58</td><td>MAC</td><td>22.07 ms</td><td>NTT</td></tr>
+        <tr><td>+ Min-KS + seeded keys + OTF plaintexts</td><td>7.19 ms</td><td>0.58</td><td>MAC</td><td>26.65 ms</td><td>NTT</td></tr>
+    </table>
+    </div>
+    <ul>
+        <li><strong>On the memory-bound design</strong> key reuse (Min-KS) is worth 1.6&times; on its own and the full set 1.9&times;. Seeded keys on their own <em>lose</em> a little once the design is no longer memory-bound: their PRNG work lands on the MAC lanes, which are now the bottleneck.</li>
+        <li><strong>On the NTT-starved design</strong> every technique hurts: each trades arithmetic for bytes, and there are no spare cycles to trade. Hoisting, which saves NTTs, is the only one that helps (no hoisting is 15% slower).</li>
+        <li>Lesson: techniques are not universally good. The simulator's job is to say which ones pay on <em>this</em> design.</li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-05">
+    <div class="slide-number">05</div>
+    <h2>Power and Energy per Bootstrap</h2>
+    <div class="table-wrap">
+    <table>
+        <tr><th>Configuration (250 W TDP)</th><th>Bootstrap</th><th>Clock</th><th>Avg / peak W</th><th>mJ</th><th>Static / HBM energy</th><th>Verdict</th></tr>
+        <tr><td>ARK-class, baseline</td><td>13.94 ms</td><td>100%</td><td>82 / 176</td><td>1,139</td><td>49% / 33%</td><td>memory</td></tr>
+        <tr><td>&hellip; with DVFS</td><td>15.83 ms</td><td>50%</td><td>72 / 103</td><td>1,134</td><td>56% / 33%</td><td>memory</td></tr>
+        <tr><td>ARK-class, all techniques</td><td>7.19 ms</td><td>100%</td><td>84 / 150</td><td>607</td><td>47% / 4%</td><td>MAC</td></tr>
+        <tr><td>2&times; NTT and MAC, all techniques</td><td>6.95 ms</td><td>91%</td><td>82 / 179</td><td>569</td><td>49% / 4%</td><td>power (MAC)</td></tr>
+        <tr><td>4&times; NTT and MAC, all techniques</td><td>8.28 ms</td><td>74%</td><td>70 / 135</td><td>577</td><td>57% / 4%</td><td>power (MAC)</td></tr>
+        <tr><td>4&times;, TDP not enforced</td><td>6.20 ms</td><td>100%</td><td>92 / 239</td><td>567</td><td>44% / 4%</td><td>MAC</td></tr>
+    </table>
+    </div>
+    <ul>
+        <li><strong>Energy follows bytes and time.</strong> Cutting HBM traffic halves energy per bootstrap (1,139 &rarr; 607 mJ). Static power is about half the total, so finishing sooner is itself an energy optimisation ("race to idle").</li>
+        <li><strong>DVFS barely helps here:</strong> halving the clock of a memory-bound design saves dynamic energy but stretches the run 14% and pays static power for longer, so the net saving is 0.4%.</li>
+        <li><strong>Over-provisioned compute is wasted under a TDP:</strong> the 4&times; design's worst case is 462 W, so it runs at 74% clock and ends up slower than the 2&times; design. With the TDP ignored it would be fastest, at a 239 W peak that only stays under the limit because the workload never runs every unit flat out. A dynamic power manager could exploit that headroom.</li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-06">
+    <div class="slide-number">06</div>
+    <h2>Interactive: Design-Space Map</h2>
+    <p>Runs a 5 &times; 4 grid of full bootstraps in the browser (the bit-exact JavaScript port) and colours each cell by its verdict. Change the algorithm, SRAM or TDP and watch the regions move.</p>
+    <div class="control-panel">
+        <div class="sim-grid">
+            <div class="control-row"><label for="dm-alg">Algorithm</label><select id="dm-alg"><option value="base" selected>baseline</option><option value="minks">Min-KS</option><option value="all">Min-KS + seeded + OTF</option></select></div>
+            <div class="control-row"><label for="dm-sram">SRAM (MiB)</label><select id="dm-sram"><option>256</option><option selected>512</option><option>1024</option><option>4096</option></select></div>
+            <div class="control-row"><label for="dm-tdp">TDP (W)</label><input type="range" id="dm-tdp" min="150" max="600" step="25" value="250"><span class="val" id="dm-tdp-val">250</span></div>
+            <div class="control-row"><label for="dm-en">Enforce TDP</label><select id="dm-en"><option value="1" selected>yes</option><option value="0">no</option></select></div>
+        </div>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem;"><button class="btn" id="dm-run">Map it</button><span id="dm-status" style="font-family:var(--font-mono); font-size:0.8rem; color:var(--text-secondary); align-self:center;"></span></div>
+        <div class="canvas-wrap" style="padding:0.4rem;"><canvas id="dm-c" width="900" height="380"></canvas></div>
+        <div id="dm-leg" style="font-family:var(--font-mono); font-size:0.75rem; color:var(--text-secondary);"></div>
+    </div>
+    <script id="sim-engine">
+// fhe-sim, JavaScript port of FHE_Accelerator_Sim (SimPy).
+// Same parameter sets, the same bootstrap trace generator, cost model, scratchpad,
+// event engine and metrics. A ~100-line SimPy core (events, processes as generators,
+// Resource with SimPy's request/release ordering) stands in for SimPy, so the results
+// match the Python package bit for bit (tests/test_simulator.py checks this).
+(function (root) {
+    'use strict';
+    const MiB = 1 << 20, WORD = 8;
+    const cdiv = (a, b) => Math.ceil(a / b);
+    const ceilLog2 = x => (x > 1 ? (x - 1).toString(2).length : 0);
+    const log2Int = x => x.toString(2).length - 1;
+
+    // ── parameters (params.py) ───────────────────────────────────────
+    function mkParams(o) {
+        const p = Object.assign({ qBits: 50, logSlots: null, ctsLevels: 3, stcLevels: 3, evalmodDegree: 59, doubleAngle: 2 }, o);
+        p.N = 2 ** p.logN;
+        p.slotsLog = p.logSlots === null ? p.logN - 1 : p.logSlots;
+        p.fullSlots = p.slotsLog === p.logN - 1;
+        p.alpha = cdiv(p.L + 1, p.dnum);
+        p.k = p.alpha;
+        p.beta = lev => cdiv(lev + 1, p.alpha);
+        p.digitSizes = lev => { const l = lev + 1, out = []; for (let i = 0; i < p.beta(lev); i++) out.push(Math.min(p.alpha, l - i * p.alpha)); return out; };
+        p.ctBytes = lev => 2 * p.N * (lev + 1) * WORD;
+        p.ptBytes = lev => p.N * (lev + 1) * WORD;
+        p.evkBytes = lev => (lev === undefined || lev === null) ? 2 * p.dnum * p.N * (p.L + 1 + p.k) * WORD : 2 * p.beta(lev) * p.N * (lev + 1 + p.k) * WORD;
+        p.modupBytes = lev => p.beta(lev) * p.N * (lev + 1 + p.k) * WORD;
+        p.ksWorkingSet = () => { const lk = p.L + 1 + p.k; return (p.beta(p.L) * lk + 2 * lk) * p.N * WORD; };
+        p.logPQ = () => 60 + p.L * p.qBits + 60 * p.k;
+        let b = 1; while (b * b < p.evalmodDegree + 1) b *= 2;
+        p.evalmodBaby = b;
+        p.evalmodGiant = cdiv(p.evalmodDegree + 1, b);
+        return p;
+    }
+    const PARAMS = {
+        'ark': { name: 'ARK-like (N=2^16, L=23, dnum=4)', logN: 16, L: 23, dnum: 4 },
+        'lattigo': { name: 'Lattigo-like (N=2^16, L=24, dnum=5)', logN: 16, L: 24, dnum: 5 },
+        'gpu100x': { name: '100x GPU (N=2^16, L=34, dnum=5)', logN: 16, L: 34, dnum: 5 },
+        'openfhe-sparse': { name: 'OpenFHE sparse (N=2^16, L=18, dnum=3, 8 slots)', logN: 16, L: 18, dnum: 3, qBits: 59,
+                            logSlots: 3, ctsLevels: 1, stcLevels: 1, evalmodDegree: 119, doubleAngle: 3 },
+        'small': { name: 'small test set (N=2^12, L=11, dnum=3)', logN: 12, L: 11, dnum: 3, ctsLevels: 2, stcLevels: 2,
+                   evalmodDegree: 15, doubleAngle: 1 },
+    };
+
+    // ── workload (workload.py) ───────────────────────────────────────
+    const STAGES = ['modraise', 'cts', 'evalmod', 'stc'];
+    const K = (kind, amount, words) => ({ kind, amount, words });
+    const kNtt = (limbs, N, inv) => K(inv ? 'intt' : 'ntt', limbs, 2 * limbs * N);
+    const kMac = ops => K('mac', ops, 3 * ops);
+    function ksModup(p, lev) {
+        const N = p.N, l = lev + 1, k = p.k, ds = p.digitSizes(lev);
+        let newLimbs = 0, bconv = 0;
+        for (const a of ds) newLimbs += l + k - a;
+        for (const a of ds) bconv += N * a * (l + k - a);
+        bconv += N * l;
+        return [kNtt(l, N, true), K('bconv', bconv, N * (l + newLimbs)), kNtt(newLimbs, N)];
+    }
+    function ksTail(p, lev) {
+        const N = p.N, l = lev + 1, k = p.k, b = p.beta(lev);
+        const inner = 2 * b * (l + k) * N, moddown = 2 * (N * k * l + N * k + N * l);
+        return [K('mac', inner, 3 * b * (l + k) * N + 2 * (l + k) * N), kNtt(2 * k, N, true),
+                K('bconv', moddown, 4 * N * (k + l)), kNtt(2 * l, N)];
+    }
+    function rescaleKernels(p, lev) {
+        const N = p.N, l = lev + 1;
+        return [kNtt(2, N, true), kNtt(2 * (l - 1), N), kMac(2 * (l - 1) * N)];
+    }
+    function dftSplit(logSlots, n) {
+        const base = Math.floor(logSlots / n), rem = logSlots % n, out = [];
+        for (let j = 0; j < n; j++) out.push(j < rem ? base + 1 : base);
+        return out;
+    }
+
+    function Builder(p, o) {
+        const B = { p, o, ops: [], sizes: {}, levels: {}, external: [], stage: 'modraise', boot: 0, n: 0 };
+        B.obj = (level, nbytes) => { const name = `b${B.boot}.c${B.n}`; B.n++; B.sizes[name] = nbytes; B.levels[name] = level; return name; };
+        B.externalCt = level => { const name = B.obj(level, p.ctBytes(level)); B.external.push(name); return name; };
+        B.key = (kid, level) => { const b = p.evkBytes(level); return [kid, o.seededKeys ? Math.floor(b / 2) : b]; };
+        B.seedKernels = level => o.seededKeys ? [kMac(p.beta(level) * (level + 1 + p.k) * p.N)] : [];
+        B.emit = (op, level, inputs, outLevel, kernels, key, pts, outBytes) => {
+            const out = B.obj(outLevel, outBytes === undefined ? p.ctBytes(outLevel) : outBytes);
+            B.ops.push({ id: B.ops.length, op, stage: B.stage, level, inputs: inputs.slice(), output: out, kernels,
+                         key: key || null, pts: pts || [], boot: B.boot });
+            return out;
+        };
+        B.lvl = (...xs) => Math.min(...xs.map(x => B.levels[x]));
+        B.hmult = (a, b, extra, postAdds) => {
+            extra = extra || []; postAdds = postAdds === undefined ? 1 : postAdds;
+            const lev = B.lvl(a, b), N = p.N, l = lev + 1;
+            const ks = [kMac(4 * l * N), ...ksModup(p, lev), ...B.seedKernels(lev), ...ksTail(p, lev),
+                        kMac(2 * l * N * postAdds), ...rescaleKernels(p, lev)];
+            return B.emit('hmult', lev, [a, b, ...extra], lev - 1, ks, B.key('relin', lev));
+        };
+        B.hrot = (x, kid) => {
+            const lev = B.lvl(x), N = p.N, l = lev + 1;
+            const ks = [K('auto', 2 * l * N, 4 * l * N), ...ksModup(p, lev), ...B.seedKernels(lev), ...ksTail(p, lev)];
+            return B.emit('hrot', lev, [x], lev, ks, B.key(kid, lev));
+        };
+        B.modup = x => { const lev = B.lvl(x); return B.emit('modup', lev, [x], lev, ksModup(p, lev), null, [], p.modupBytes(lev)); };
+        B.hrotHoisted = (x, digits, kid) => {
+            const lev = B.lvl(x), N = p.N, l = lev + 1;
+            const w = (l + p.beta(lev) * (l + p.k)) * N;
+            const ks = [K('auto', w, 2 * w), ...B.seedKernels(lev), ...ksTail(p, lev)];
+            return B.emit('hrot', lev, [x, digits], lev, ks, B.key(kid, lev));
+        };
+        B.pmac = (xs, ptIds) => {
+            const lev = B.lvl(...xs), N = p.N, l = lev + 1, m = xs.length;
+            let kern = [kMac(2 * l * N * m + 2 * l * N * (m - 1))], pts;
+            if (o.otfPlaintexts) { kern = [kNtt(l * m, N), kMac(l * N * m), ...kern]; pts = ptIds.map(id => [id, N * 8]); }
+            else pts = ptIds.map(id => [id, p.ptBytes(lev)]);
+            return B.emit('pmac', lev, xs, lev, kern, null, pts);
+        };
+        B.add = (xs, rescale) => {
+            const lev = B.lvl(...xs), N = p.N, l = lev + 1;
+            let kern = [kMac(2 * l * N * Math.max(1, xs.length - 1))];
+            if (rescale) kern = kern.concat(rescaleKernels(p, lev));
+            return B.emit('add', lev, xs, rescale ? lev - 1 : lev, kern);
+        };
+        B.cmult = xs => {
+            const lev = B.lvl(...xs), N = p.N, l = lev + 1;
+            return B.emit('cmult', lev, xs, lev - 1, [kMac(2 * l * N * xs.length + 2 * l * N), ...rescaleKernels(p, lev)]);
+        };
+        B.modraise = x => {
+            let y = B.emit('modraise', 0, [x], p.L, [kNtt(2, p.N, true), kNtt(2 * (p.L + 1), p.N)]);
+            for (let i = 0; i < p.logN - 1 - p.slotsLog; i++) y = B.add([y, B.hrot(y, `sub${i}`)]);
+            return y;
+        };
+        B.dft = (x, prefix, nLevels) => {
+            const split = dftSplit(p.slotsLog, nLevels);
+            for (let j = 0; j < split.length; j++) {
+                const k = split[j], d = 2 ** (k + 1) - 1, n1 = Math.min(2 ** cdiv(k + 1, 2), d), n2 = cdiv(d, n1), tag = `${prefix}${j}`;
+                const babies = [x];
+                if (n1 > 1) {
+                    if (o.minKs) { for (let i = 1; i < n1; i++) babies.push(B.hrot(babies[babies.length - 1], `${tag}.b`)); }
+                    else if (o.hoisting) { const dig = B.modup(x); for (let i = 1; i < n1; i++) babies.push(B.hrotHoisted(x, dig, `${tag}.b${i}`)); }
+                    else { for (let i = 1; i < n1; i++) babies.push(B.hrot(x, `${tag}.b${i}`)); }
+                }
+                const inners = [];
+                for (let g = 0; g < n2; g++) {
+                    const m = Math.min(n1, d - g * n1), ids = [];
+                    for (let i = 0; i < m; i++) ids.push(`${tag}.d${g}.${i}`);
+                    inners.push(B.pmac(babies.slice(0, m), ids));
+                }
+                if (o.minKs) {
+                    let acc = inners[inners.length - 1];
+                    for (let g = n2 - 2; g >= 0; g--) acc = B.add([B.hrot(acc, `${tag}.g`), inners[g]], g === 0);
+                    x = n2 > 1 ? acc : B.add([acc], true);
+                } else {
+                    const parts = [inners[0]];
+                    for (let g = 1; g < n2; g++) parts.push(B.hrot(inners[g], `${tag}.g${g}`));
+                    x = B.add(parts, true);
+                }
+            }
+            return x;
+        };
+        B.evalmod = x => {
+            const b = p.evalmodBaby, g = p.evalmodGiant;
+            const T = { 1: B.cmult([x]) };
+            for (let i = 2; i <= b; i++) T[i] = B.hmult(T[Math.floor((i + 1) / 2)], T[Math.floor(i / 2)]);
+            const m = ceilLog2(g), G = [T[b]];
+            for (let t = 1; t < m; t++) G.push(B.hmult(G[G.length - 1], G[G.length - 1]));
+            let nodes = [];
+            for (let t = 0; t < g; t++) { const ts = []; for (let i = 1; i < b; i++) ts.push(T[i]); nodes.push(B.cmult(ts)); }
+            let t = 0;
+            while (nodes.length > 1) {
+                const nxt = [];
+                for (let s = 0; s < nodes.length - 1; s += 2) nxt.push(B.hmult(nodes[s + 1], G[t], [nodes[s]]));
+                if (nodes.length % 2) nxt.push(nodes[nodes.length - 1]);
+                nodes = nxt; t++;
+            }
+            let y = nodes[0];
+            for (let r = 0; r < p.doubleAngle; r++) y = B.hmult(y, y);
+            return y;
+        };
+        B.bootstrap = x => {
+            B.stage = 'modraise'; x = B.modraise(x);
+            B.stage = 'cts'; x = B.dft(x, 'cts', p.ctsLevels);
+            const c = B.hrot(x, 'conj');
+            let parts = p.fullSlots ? [B.add([x, c]), B.add([x, c])] : [B.add([x, c])];
+            B.stage = 'evalmod'; parts = parts.map(y => B.evalmod(y));
+            x = parts.length > 1 ? B.add(parts) : parts[0];
+            B.stage = 'stc'; x = B.dft(x, 'stc', p.stcLevels);
+            if (B.levels[x] < 0) throw new Error(`${p.name}: bootstrapping needs more than L = ${p.L} levels`);
+            return x;
+        };
+        return B;
+    }
+    function bootOptions(o) {
+        return Object.assign({ nBoot: 1, hoisting: true, minKs: false, seededKeys: false, otfPlaintexts: false }, o || {});
+    }
+    function bootstrapTrace(p, opts) {
+        const o = bootOptions(opts), B = Builder(p, o);
+        for (let i = 0; i < o.nBoot; i++) { B.boot = i; B.bootstrap(B.externalCt(0)); }
+        return { params: p, ops: B.ops, sizes: B.sizes, external: B.external, levels: B.levels, options: o };
+    }
+    function heOpTrace(p, op, level, n) {
+        const B = Builder(p, bootOptions({})), lev = level === undefined || level === null ? p.L : level;
+        B.stage = op;
+        for (let i = 0; i < (n || 1); i++) {
+            B.boot = i;
+            const x = B.externalCt(lev), y = B.externalCt(lev);
+            if (op === 'hmult') B.hmult(x, y); else B.hrot(x, 'rot1');
+        }
+        return { params: p, ops: B.ops, sizes: B.sizes, external: B.external, levels: B.levels, options: B.o };
+    }
+    function summariseTrace(trace) {
+        const out = {};
+        for (const o of trace.ops) {
+            const s = out[o.stage] || (out[o.stage] = { hmult: 0, hrot: 0, pmult: 0, ops: 0, ntt_limbs: 0, intt_limbs: 0, bconv: 0, mac: 0, auto_words: 0, keys: new Set(), key_bytes: 0, pt_bytes: 0 });
+            s.ops++;
+            if (o.op === 'hmult' || o.op === 'hrot') s[o.op]++;
+            if (o.op === 'pmac') s.pmult += o.pts.length;
+            for (const k of o.kernels) {
+                if (k.kind === 'ntt') s.ntt_limbs += k.amount; else if (k.kind === 'intt') s.intt_limbs += k.amount;
+                else if (k.kind === 'auto') s.auto_words += k.amount; else s[k.kind] += k.amount;
+            }
+            if (o.key) { s.keys.add(o.key[0]); s.key_bytes += o.key[1]; }
+            for (const t of o.pts) s.pt_bytes += t[1];
+        }
+        for (const s of Object.values(out)) { s.distinct_keys = s.keys.size; delete s.keys; }
+        return out;
+    }
+
+    // ── hardware (hardware.py) ───────────────────────────────────────
+    const UNITS = ['ntt', 'mac', 'auto', 'optical'];
+    const KIND_UNIT = { ntt: 'ntt', intt: 'ntt', bconv: 'mac', mac: 'mac', auto: 'auto' };
+    function optical(o) {
+        const e = Object.assign({ name: 'Hybrid optical NTT', block: 16, enob: 12, samplesPerS: 1e12, grouping: 'grouped',
+                                  fomDacFj: 10, fomAdcFj: 20, laserW: 10, tuningW: 10, ideal: false }, o);
+        e.digits = qBits => {
+            if (e.ideal) return [qBits, 1];
+            for (let b = qBits; b >= 1; b--) {
+                const d = cdiv(qBits, b), m = e.grouping === 'grouped' ? d : 1;
+                if (2 ** (e.enob - 1) > m * e.block * (2 ** b - 1) ** 2) return [b, d];
+            }
+            throw new Error(`ENOB ${e.enob} cannot round a ${e.block}-point transform exactly even with 1-bit digits; lower block or raise ENOB`);
+        };
+        e.planes = qBits => { const d = e.digits(qBits)[1]; if (e.ideal) return [1, 1]; return e.grouping === 'grouped' ? [d, 2 * d - 1] : [d * d, d * d]; };
+        e.pjDac = () => e.fomDacFj * 2 ** e.enob * 1e-3;
+        e.pjAdc = () => e.fomAdcFj * 2 ** e.enob * 1e-3;
+        e.staticW = e.laserW + e.tuningW;
+        return e;
+    }
+    function accelerator(o) {
+        const hw = Object.assign({ name: 'Digital FHE accelerator (ARK-class, illustrative)', freqGhz: 1.0, nttBflyPerCycle: 4096,
+            macLanes: 8192, autoWordsPerCycle: 4096, sramMib: 512, sramGbps: 20000.0, hbmGbps: 1000.0, hbmChunkMib: 4, window: 4,
+            tdpW: 250.0, staticW: 40.0, pjBfly: 10.0, pjMac: 5.0, pjAutoWord: 1.0, pjSramByte: 1.0, pjHbmByte: 30.0, sMin: 0.5,
+            enforceTdp: true, optical: null }, o);
+        hw.sramBytes = hw.sramMib * MiB;
+        hw.rate = u => ({ ntt: hw.nttBflyPerCycle, mac: hw.macLanes, auto: hw.autoWordsPerCycle })[u] * hw.freqGhz * 1e9;
+        hw.pj = u => ({ ntt: hw.pjBfly, mac: hw.pjMac, auto: hw.pjAutoWord })[u];
+        hw.peakPower = s => {
+            const sram = hw.sramGbps * 1e9 * hw.pjSramByte * 1e-12;
+            let p = hw.staticW + hw.hbmGbps * 1e9 * hw.pjHbmByte * 1e-12;
+            for (const u of ['ntt', 'mac', 'auto']) p += hw.rate(u) * s * hw.pj(u) * 1e-12 * s * s + sram * s;
+            if (hw.optical) { const op = hw.optical; p += op.staticW + op.samplesPerS * (op.pjDac() + op.pjAdc()) * 1e-12; }
+            return p;
+        };
+        hw.tdpClock = () => {
+            if (!hw.enforceTdp || hw.peakPower(1.0) <= hw.tdpW) return 1.0;
+            if (hw.peakPower(hw.sMin) > hw.tdpW) throw new Error(`TDP ${hw.tdpW} W is below the power at the lowest clock`);
+            let lo = hw.sMin, hi = 1.0;
+            for (let i = 0; i < 60; i++) { const mid = (lo + hi) / 2; if (hw.peakPower(mid) <= hw.tdpW) lo = mid; else hi = mid; }
+            return lo;
+        };
+        return hw;
+    }
+    const withHw = (hw, o) => accelerator(Object.assign({}, stripHw(hw), o));
+    const stripHw = hw => { const c = {}; for (const [k, v] of Object.entries(hw)) if (typeof v !== 'function' && k !== 'sramBytes') c[k] = v; return c; };
+    const SMALL_DIGITAL = { name: 'Small digital accelerator (NTT-bound, illustrative)', nttBflyPerCycle: 512, macLanes: 2048,
+                            autoWordsPerCycle: 1024, sramMib: 512, hbmGbps: 2000.0 };
+    const ACCELERATORS = {
+        'ark': () => accelerator({}),
+        'small': () => accelerator(SMALL_DIGITAL),
+        'cpu': () => accelerator({ name: 'CPU-like (fitted to OpenFHE on an i7-3770, 8 threads)', freqGhz: 3.4, nttBflyPerCycle: 0.18,
+            macLanes: 0.18, autoWordsPerCycle: 0.72, sramMib: 8192, sramGbps: 20.0, hbmGbps: 20.0, window: 1, tdpW: 77.0, staticW: 20.0,
+            pjBfly: 2000.0, pjMac: 1000.0, pjAutoWord: 200.0, pjSramByte: 5.0, pjHbmByte: 100.0, enforceTdp: false }),
+        'hybrid': () => accelerator(Object.assign({}, SMALL_DIGITAL, { name: 'Small digital + hybrid optical NTT (illustrative)',
+            tdpW: 300.0, optical: optical({ samplesPerS: 5e11 }) })),
+        'ideal-optical': () => accelerator(Object.assign({}, SMALL_DIGITAL, { name: 'Small digital + ideal optical NTT (hypothetical bound)',
+            tdpW: 300.0, optical: optical({ block: 4096, enob: 8, samplesPerS: 5e11, ideal: true }) })),
+        'hot': () => accelerator({ nttBflyPerCycle: 16384, macLanes: 32768 }),
+    };
+    function costModel(hw, logN, qBits, s) {
+        let opt = null;
+        if (hw.optical) {
+            const o = hw.optical;
+            if (o.block > 2 ** logN) throw new Error('optical block larger than the ring degree');
+            const [b, d] = o.digits(qBits), [dac, adc] = o.planes(qBits);
+            opt = [b, d, dac, adc, log2Int(o.block)];
+        }
+        const N = 2 ** logN;
+        const seg = (unit, work, words) => {
+            const tLogic = work / (hw.rate(unit) * s), tSram = words * 8 / (hw.sramGbps * 1e9 * s);
+            const t = tLogic >= tSram ? tLogic : tSram;
+            const e = work * hw.pj(unit) * 1e-12 * s * s + words * 8 * hw.pjSramByte * 1e-12;
+            return { unit, time: t, energy: e, work, dac: 0, adc: 0 };
+        };
+        return {
+            s, staticW: hw.staticW + (hw.optical ? hw.optical.staticW : 0.0),
+            segments(k) {
+                const unit = KIND_UNIT[k.kind];
+                if (unit !== 'ntt') return [seg(unit, k.amount, k.words)];
+                if (opt === null) return [seg('ntt', k.amount * (N / 2) * logN, k.words)];
+                const [, d, dacPlanes, adcPlanes, optStages] = opt, o = hw.optical, digStages = logN - optStages, segs = [];
+                if (digStages) segs.push(seg('ntt', k.amount * (N / 2) * digStages, k.words));
+                const blocks = k.amount * (N / o.block);
+                const dac = blocks * dacPlanes * 2 * o.block, adc = blocks * adcPlanes * 2 * o.block;
+                const t = (dac >= adc ? dac : adc) / o.samplesPerS;
+                segs.push({ unit: 'optical', time: t, energy: dac * o.pjDac() * 1e-12 + adc * o.pjAdc() * 1e-12, work: dac + adc, dac, adc });
+                const corr = k.amount * N * (o.ideal ? 3 : d + adcPlanes + 3);
+                segs.push(seg('mac', corr, 3 * corr));
+                return segs;
+            },
+        };
+    }
+
+    // ── a minimal SimPy core ─────────────────────────────────────────
+    const PENDING = Symbol('pending'), URGENT = 0, NORMAL = 1;
+    class Env {
+        constructor() { this.now = 0; this.q = []; this.eid = 0; }
+        schedule(ev, prio, delay) {
+            const e = [this.now + (delay || 0), prio === undefined ? NORMAL : prio, this.eid++, ev], q = this.q;
+            q.push(e);
+            let i = q.length - 1;
+            while (i > 0) { const pi = (i - 1) >> 1; if (less(q[pi], e)) break; q[i] = q[pi]; i = pi; }
+            q[i] = e;
+        }
+        pop() {
+            const q = this.q, top = q[0], last = q.pop();
+            if (q.length) {
+                let i = 0; const n = q.length;
+                for (;;) {
+                    const l = 2 * i + 1, r = l + 1; let m = i;
+                    if (l < n && less(q[l], m === i ? last : q[m])) m = l;
+                    if (r < n && less(q[r], m === i ? last : q[m])) m = r;
+                    if (m === i) break;
+                    q[i] = q[m]; i = m;
+                }
+                q[i] = last;
+            }
+            return top;
+        }
+        run() {
+            while (this.q.length) {
+                const [t, , , ev] = this.pop();
+                this.now = t;
+                const cbs = ev.callbacks; ev.callbacks = null;
+                for (const cb of cbs) cb(ev);
+            }
+        }
+        event() { return new Ev(this); }
+        timeout(d) { const ev = new Ev(this); ev._ok = true; ev._value = null; this.schedule(ev, NORMAL, d); return ev; }
+        process(gen) { return new Proc(this, gen); }
+    }
+    const less = (a, b) => a[0] < b[0] || (a[0] === b[0] && (a[1] < b[1] || (a[1] === b[1] && a[2] < b[2])));
+    class Ev {
+        constructor(env) { this.env = env; this.callbacks = []; this._value = PENDING; this._ok = true; }
+        get triggered() { return this._value !== PENDING; }
+        get processed() { return this.callbacks === null; }
+        succeed(v) {
+            if (this._value !== PENDING) throw new Error('already triggered');
+            this._ok = true; this._value = v === undefined ? null : v; this.env.schedule(this, NORMAL, 0); return this;
+        }
+    }
+    class Proc extends Ev {
+        constructor(env, gen) {
+            super(env);
+            this.gen = gen;
+            this.resume = this._resume.bind(this);
+            const init = new Ev(env); init.callbacks = [this.resume]; init._ok = true; init._value = null;
+            env.schedule(init, URGENT, 0);
+        }
+        _resume(event) {
+            for (;;) {
+                const r = this.gen.next(event._value);
+                if (r.done) { this._ok = true; this._value = r.value === undefined ? null : r.value; this.env.schedule(this, NORMAL, 0); break; }
+                event = r.value;
+                if (event.callbacks !== null) { event.callbacks.push(this.resume); break; }
+            }
+        }
+    }
+    class Resource {
+        constructor(env, capacity) { this.env = env; this.capacity = capacity; this.users = []; this.putQ = []; this.getQ = []; }
+        request() {
+            const ev = new Ev(this.env); ev.resource = this;
+            this.putQ.push(ev); ev.callbacks.push(() => this._triggerGet()); this._triggerPut();
+            return ev;
+        }
+        release(req) {
+            const ev = new Ev(this.env); ev.request = req;
+            this.getQ.push(ev); ev.callbacks.push(() => this._triggerPut()); this._triggerGet();
+            return ev;
+        }
+        _triggerPut() {
+            let idx = 0;
+            while (idx < this.putQ.length) {
+                const e = this.putQ[idx];
+                if (this.users.length < this.capacity) { this.users.push(e); e.succeed(); }
+                if (!e.triggered) idx++; else this.putQ.splice(idx, 1);
+                break;                                  // Resource._do_put returns None: stop after one
+            }
+        }
+        _triggerGet() {
+            let idx = 0;
+            while (idx < this.getQ.length) {
+                const e = this.getQ[idx], u = this.users.indexOf(e.request);
+                if (u >= 0) this.users.splice(u, 1);
+                e.succeed();
+                if (!e.triggered) idx++; else this.getQ.splice(idx, 1);
+                break;
+            }
+        }
+    }
+
+    // ── scratchpad and engine (sim.py) ───────────────────────────────
+    class Scratchpad {
+        constructor(cap) { this.cap = cap; this.used = 0; this.items = new Map(); }
+        hit(name, size) {
+            const it = this.items.get(name);
+            if (it === undefined || it[0] < size) return false;
+            this.items.delete(name); this.items.set(name, it); return true;
+        }
+        free(name) { const it = this.items.get(name); if (it !== undefined) { this.items.delete(name); this.used -= it[0]; } }
+        alloc(name, size, cls, dirty, pinned, evicted) {
+            this.free(name);
+            if (size > this.cap) return false;
+            while (this.used + size > this.cap) {
+                let victim = null;
+                for (const n of this.items.keys()) if (!pinned.has(n)) { victim = n; break; }
+                if (victim === null) return false;
+                const [vs, vc, vd] = this.items.get(victim);
+                this.free(victim); evicted.push([victim, vs, vc, vd]);
+            }
+            this.items.set(name, [size, cls, dirty]); this.used += size; return true;
+        }
+    }
+
+    function runSim(trace, hw, clock, traceOn) {
+        const p = trace.params, env = new Env(), cost = costModel(hw, p.logN, p.qBits, clock);
+        const units = {}; for (const u of UNITS) units[u] = new Resource(env, 1);
+        const hbm = new Resource(env, 1);
+        const st = { busy: { ntt: 0, mac: 0, auto: 0, optical: 0, hbm: 0 }, work: { ntt: 0, mac: 0, auto: 0, optical: 0 },
+                     energy: { ntt: 0, mac: 0, auto: 0, optical: 0, hbm: 0 }, bytes: { key: 0, pt: 0, ct_read: 0, ct_write: 0 },
+                     dac: 0, adc: 0, stageBusy: {}, stageFirst: {}, stageLast: {}, peakW: 0 };
+        const spans = [];
+        const n = trace.ops.length, producer = {}, lastUse = {};
+        for (const o of trace.ops) producer[o.output] = o.id;
+        for (const o of trace.ops) for (const x of o.inputs) lastUse[x] = o.id;
+        const reserve = p.ksWorkingSet();
+        if (hw.sramBytes < reserve) throw new Error(`scratchpad ${hw.sramMib} MiB is smaller than one key switch's working set (${(reserve / MiB).toFixed(0)} MiB)`);
+        const spad = new Scratchpad(hw.sramBytes - reserve);
+        const done = new Array(n).fill(false), doneEv = new Array(n).fill(null), wbEv = {};
+        const opStart = new Array(n).fill(0.0), opEnd = new Array(n).fill(0.0);
+        let inflight = 0, slotEv = null, pNow = 0.0;
+        const chunk = hw.hbmChunkMib * MiB, hbmW = hw.hbmGbps * 1e9 * hw.pjHbmByte * 1e-12;
+        const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+
+        function plan(o) {
+            const pl = { keyLoad: 0, ptLoad: 0, ctLoad: [], writebacks: [], outWrite: 0 }, sizes = trace.sizes;
+            const pinned = new Set(o.inputs); pinned.add(o.output);
+            if (o.key) pinned.add(o.key[0]);
+            for (const [pid] of o.pts) pinned.add(pid);
+            const ev = [];
+            for (const x of o.inputs) if (!spad.hit(x, sizes[x])) { pl.ctLoad.push([x, sizes[x]]); spad.alloc(x, sizes[x], 'ct', false, pinned, ev); }
+            if (o.key) { const [kid, kb] = o.key; if (!spad.hit(kid, kb)) { pl.keyLoad += kb; spad.alloc(kid, kb, 'key', false, pinned, ev); } }
+            for (const [pid, pb] of o.pts) if (!spad.hit(pid, pb)) { pl.ptLoad += pb; spad.alloc(pid, pb, 'pt', false, pinned, ev); }
+            const outSize = sizes[o.output];
+            if (!has(lastUse, o.output)) pl.outWrite = outSize;
+            else if (!spad.alloc(o.output, outSize, 'ct', true, pinned, ev)) pl.outWrite = outSize;
+            for (const [name, size, , dirty] of ev) if (dirty && (has(lastUse, name) ? lastUse[name] : -1) > o.id) pl.writebacks.push([name, size]);
+            for (const x of o.inputs) if (lastUse[x] === o.id) spad.free(x);
+            return pl;
+        }
+        const power = dp => { pNow += dp; if (pNow > st.peakW) st.peakW = pNow; };
+        const stageBusy = (stage, unit, dt) => { const d = st.stageBusy[stage] || (st.stageBusy[stage] = {}); d[unit] = (d[unit] || 0.0) + dt; };
+        function* waitDone(i) { if (!done[i]) yield doneEv[i]; }
+        function* xfer(nbytes, cls, stage) {
+            const bw = hw.hbmGbps * 1e9; let left = nbytes;
+            while (left > 0) {
+                const sz = left < chunk ? left : chunk;
+                const req = hbm.request(); yield req;
+                const start = env.now; power(hbmW);
+                const dt = sz / bw;
+                yield env.timeout(dt);
+                power(-hbmW); hbm.release(req);
+                st.busy.hbm += dt; st.energy.hbm += sz * hw.pjHbmByte * 1e-12; stageBusy(stage, 'hbm', dt);
+                if (traceOn) spans.push(['hbm', stage, start, dt, cls]);
+                left -= sz;
+            }
+            st.bytes[cls] += nbytes;
+        }
+        function* writeback(name, size) { const pr = producer[name]; if (pr !== undefined) yield* waitDone(pr); yield* xfer(size, 'ct_write', 'spill'); }
+        function* prefetch(o, pl) { if (pl.keyLoad) yield* xfer(pl.keyLoad, 'key', o.stage); if (pl.ptLoad) yield* xfer(pl.ptLoad, 'pt', o.stage); }
+        function* runOp(o, pl) {
+            const pf = (pl.keyLoad || pl.ptLoad) ? env.process(prefetch(o, pl)) : null;
+            for (const [name, size] of pl.writebacks) wbEv[name] = env.process(writeback(name, size));
+            for (const x of o.inputs) { const pr = producer[x]; if (pr !== undefined) yield* waitDone(pr); }
+            for (const [x, size] of pl.ctLoad) { const w = wbEv[x]; if (w !== undefined && !w.processed) yield w; yield* xfer(size, 'ct_read', o.stage); }
+            if (pf !== null && !pf.processed) yield pf;
+            opStart[o.id] = env.now;
+            if (!has(st.stageFirst, o.stage)) st.stageFirst[o.stage] = env.now;
+            for (const k of o.kernels) {
+                for (const seg of cost.segments(k)) {
+                    const req = units[seg.unit].request(); yield req;
+                    const start = env.now, pw = seg.time > 0 ? seg.energy / seg.time : 0.0;
+                    power(pw);
+                    yield env.timeout(seg.time);
+                    power(-pw); units[seg.unit].release(req);
+                    st.busy[seg.unit] += seg.time; st.work[seg.unit] += seg.work; st.energy[seg.unit] += seg.energy;
+                    st.dac += seg.dac; st.adc += seg.adc; stageBusy(o.stage, seg.unit, seg.time);
+                    if (traceOn) spans.push([seg.unit, o.stage, start, seg.time, `${o.op}.${k.kind} L${o.level}`]);
+                }
+            }
+            if (pl.outWrite) yield* xfer(pl.outWrite, 'ct_write', o.stage);
+            opEnd[o.id] = env.now; st.stageLast[o.stage] = env.now;
+            done[o.id] = true; doneEv[o.id].succeed(); inflight--;
+            if (slotEv !== null && !slotEv.triggered) slotEv.succeed();
+        }
+        function* issuer() {
+            for (const o of trace.ops) {
+                while (inflight >= hw.window) { slotEv = env.event(); yield slotEv; }
+                const pl = plan(o);
+                inflight++; doneEv[o.id] = env.event(); env.process(runOp(o, pl));
+            }
+        }
+        env.process(issuer());
+        env.run();
+        return { trace, hw, clock: cost.s, horizon: env.now, stats: st, opStart, opEnd, staticW: cost.staticW, spans };
+    }
+
+    function simulate(trace, hw, opt) {
+        opt = opt || {};
+        const s = opt.clock !== undefined && opt.clock !== null ? opt.clock : hw.tdpClock();
+        let res = runSim(trace, hw, s, !!opt.trace);
+        if (opt.dvfs && (opt.clock === undefined || opt.clock === null)) {
+            const b = res.stats.busy;
+            const top = Math.max(b.ntt, b.mac, b.auto);
+            if (b.hbm > top) {
+                let s2 = s * top / b.hbm;
+                if (s2 < hw.sMin) s2 = hw.sMin;
+                if (s2 < s) res = runSim(trace, hw, s2, !!opt.trace);
+            }
+        }
+        return res;
+    }
+
+    // ── metrics (metrics.py) ─────────────────────────────────────────
+    const BOUND_NAME = { hbm: 'memory-bound', ntt: 'NTT-bound', optical: 'NTT-bound (optical engine)', mac: 'MAC-bound', auto: 'permutation-bound' };
+    function summarise(res) {
+        const st = res.stats, H = res.horizon, hw = res.hw;
+        let nBoot = 0; for (const o of res.trace.ops) if (o.boot + 1 > nBoot) nBoot = o.boot + 1;
+        const resources = [...UNITS, 'hbm'], util = {};
+        for (const u of resources) util[u] = st.busy[u] / H;
+        let top = 'hbm';
+        for (const u of resources) if (util[u] > util[top]) top = u;
+        let bound = BOUND_NAME[top];
+        if (res.clock < 1.0 && top !== 'hbm' && hw.enforceTdp) bound = 'power-bound (' + BOUND_NAME[top] + ' at a TDP-limited clock)';
+        const stages = {}, hot = {};
+        for (const s of STAGES) {
+            if (!(s in st.stageFirst)) continue;
+            const span = st.stageLast[s] - st.stageFirst[s], busy = st.stageBusy[s] || {};
+            let r = null;
+            for (const u of resources) if ((busy[u] || 0.0) > 0 && (r === null || busy[u] > busy[r])) r = u;
+            const bs = {}; for (const u of resources) bs[u] = busy[u] || 0.0;
+            stages[s] = { span_s: span, busy_s: bs }; hot[s] = r;
+        }
+        let totalSpan = 0; for (const v of Object.values(stages)) totalSpan += v.span_s;
+        for (const v of Object.values(stages)) v.share = totalSpan > 0 ? v.span_s / totalSpan : 0.0;
+        let hottest = null;
+        for (const s of Object.keys(stages)) if (hottest === null || stages[s].span_s > stages[hottest].span_s) hottest = s;
+        const b = st.bytes, hbmTotal = b.key + b.pt + b.ct_read + b.ct_write;
+        const stat = res.staticW * H;
+        let dyn = 0; for (const u of resources) dyn += st.energy[u];
+        const total = stat + dyn, br = { static: stat / total };
+        for (const u of resources) br[u] = st.energy[u] / total;
+        let lower = 0; for (const u of resources) if (st.busy[u] > lower) lower = st.busy[u];
+        return {
+            params: res.trace.params.name, hardware: hw.name, nBoot, clock: res.clock, latencyS: H, perBootstrapS: H / nBoot,
+            utilisation: util, bound, boundResource: top, stages,
+            hotspots: { stage: hottest, resource: hot[hottest] === undefined ? null : hot[hottest], perStage: hot },
+            hbmBytes: Object.assign({}, b, { total: hbmTotal, keyShare: hbmTotal ? b.key / hbmTotal : 0.0 }),
+            energy: { totalJ: total, perBootstrapJ: total / nBoot, avgPowerW: total / H, peakW: res.staticW + st.peakW, tdpW: hw.tdpW,
+                      breakdown: br, dacSamples: st.dac, adcSamples: st.adc },
+            lowerBoundS: lower,
+        };
+    }
+
+    // ── convenience for the parity test and the deck ─────────────────
+    const camel = o => { const m = { n_boot: 'nBoot', min_ks: 'minKs', seeded_keys: 'seededKeys', otf_plaintexts: 'otfPlaintexts' }, out = {};
+        for (const [k, v] of Object.entries(o || {})) out[m[k] || k] = v; return out; };
+    function simulateNamed(paramsName, hwName, opts, dvfs) {
+        const p = mkParams(PARAMS[paramsName]), hw = ACCELERATORS[hwName]();
+        return simulate(bootstrapTrace(p, camel(opts)), hw, { dvfs: !!dvfs });
+    }
+    root.FheSim = { PARAMS, ACCELERATORS, STAGES, UNITS, mkParams, bootstrapTrace, heOpTrace, summariseTrace, accelerator, optical, withHw,
+                    costModel, simulate, summarise, simulateNamed, dftSplit };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+    </script>
+    <script>
+    (function(){
+        const F = window.FheSim, $ = id => document.getElementById(id);
+        const VC = { memory: '#de805a', NTT: '#aabd59', MAC: '#97cdc6', power: '#d7bbdf', permutation: '#e3b174' };
+        const NTTS = [512, 1024, 2048, 4096, 8192], HBMS = [500, 1000, 2000, 4000];
+        $('dm-tdp').addEventListener('input', () => $('dm-tdp-val').textContent = $('dm-tdp').value);
+        function opts(){ const a = $('dm-alg').value; return a === 'minks' ? { minKs: true } : a === 'all' ? { minKs: true, seededKeys: true, otfPlaintexts: true } : {}; }
+        function run(){
+            const p = F.mkParams(F.PARAMS.ark), t = F.bootstrapTrace(p, opts()), base = F.ACCELERATORS.ark();
+            const c = $('dm-c'), g = c.getContext('2d'), W = c.width, H = c.height;
+            g.clearRect(0, 0, W, H); g.font = '13px "Geist Mono", monospace';
+            const cw = (W - 150) / HBMS.length, ch = (H - 60) / NTTS.length;
+            g.fillStyle = '#a2978b';
+            HBMS.forEach((b, j) => g.fillText(`${b} GB/s`, 150 + j * cw + cw / 2 - 30, H - 20));
+            g.fillText('HBM bandwidth', W / 2 - 20, H - 4);
+            NTTS.forEach((n, i) => g.fillText(`${n} bfly/cyc`, 4, 20 + (NTTS.length - 1 - i) * ch + ch / 2));
+            let best = null;
+            NTTS.forEach((n, i) => HBMS.forEach((b, j) => {
+                const hw = F.withHw(base, { nttBflyPerCycle: n, macLanes: 2 * n, hbmGbps: b, sramMib: +$('dm-sram').value,
+                                            tdpW: +$('dm-tdp').value, enforceTdp: $('dm-en').value === '1' });
+                const x = 150 + j * cw, y = 10 + (NTTS.length - 1 - i) * ch;
+                let m;
+                try { m = F.summarise(F.simulate(t, hw)); }
+                catch (e) { g.fillStyle = '#3a322b'; g.fillRect(x + 2, y + 2, cw - 4, ch - 4); g.fillStyle = '#a2978b'; g.fillText('over TDP', x + 10, y + ch / 2); return; }
+                const kind = m.bound.split(' ')[0].replace('-bound', '');
+                g.fillStyle = VC[kind] || '#a2978b'; g.globalAlpha = 0.35; g.fillRect(x + 2, y + 2, cw - 4, ch - 4); g.globalAlpha = 1;
+                g.fillStyle = '#efe8dc'; g.fillText(`${(1e3 * m.perBootstrapS).toFixed(1)} ms`, x + 10, y + ch / 2 - 4);
+                g.fillStyle = '#a2978b'; g.fillText(`${kind}, ${(1e3 * m.energy.perBootstrapJ).toFixed(0)} mJ`, x + 10, y + ch / 2 + 14);
+                if (!best || m.perBootstrapS < best[0]) best = [m.perBootstrapS, n, b];
+            }));
+            $('dm-leg').innerHTML = Object.entries(VC).map(([k, v]) => `<span style="color:${v}">&#9632;</span> ${k}-bound`).join(' &nbsp; ')
+                + (best ? `<br>fastest cell: ${best[1]} butterflies/cycle at ${best[2]} GB/s, ${(1e3 * best[0]).toFixed(2)} ms` : '');
+        }
+        $('dm-run').onclick = () => { $('dm-status').textContent = 'mapping 20 designs…'; setTimeout(() => { const t0 = performance.now(); run(); $('dm-status').textContent = `done in ${(performance.now() - t0).toFixed(0)} ms`; }, 20); };
+        $('dm-run').click();
+    })();
+    </script>
+</section>
+
+<section class="slide" id="slide-07">
+    <div class="slide-number">07</div>
+    <h2>Sweeps, Pareto Fronts and Simulator Speed</h2>
+    <p>A 36-point sweep (NTT 1,024&ndash;8,192 butterflies/cycle &times; SRAM 256 MiB&ndash;1 GiB &times; HBM 0.5&ndash;2 TB/s, all techniques) ran in <strong>0.4 s on 8 processes</strong>. Its latency/energy Pareto front has two points:</p>
+    <div class="table-wrap">
+    <table>
+        <tr><th>NTT bfly/cycle</th><th>SRAM</th><th>HBM</th><th>Bootstrap</th><th>Energy</th><th>Verdict</th></tr>
+        <tr><td>8,192</td><td>512 MiB</td><td>1 TB/s</td><td>6.51 ms</td><td>575 mJ</td><td>power-bound (MAC at a TDP-limited clock)</td></tr>
+        <tr><td>8,192</td><td>512 MiB</td><td>2 TB/s</td><td>6.96 ms</td><td>570 mJ</td><td>power-bound (MAC at a TDP-limited clock)</td></tr>
+    </table>
+    </div>
+    <ul>
+        <li><strong>Both optimal designs are power-bound</strong> once key traffic is under control: the TDP, not silicon area, is the binding resource in this corner of the space.</li>
+        <li><strong>Simulator speed:</strong> one ark-set bootstrap (203 HE ops, 1,153 kernels) takes 62 ms in Python/SimPy and 10 ms in the JavaScript port. A one-event-per-kernel abstraction is what makes interactive design maps possible (sister series, <a href="https://brendanjameslynskey.github.io/InfSim_08_Accelerating_Simulators/">deck 08</a>).</li>
+        <li><strong>Cheaper still:</strong> <code>search.analytic_bound</code> bounds latency from the trace with no simulation (10.01 ms for the default design, against 13.94 ms simulated). Use it to prune a search before simulating, never to replace simulation; the 28% gap is the overlap structure it cannot see.</li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-08">
+    <div class="slide-number">08</div>
+    <h2>Against Published Numbers</h2>
+    <div class="table-wrap">
+    <table>
+        <tr><th>Reference</th><th>What it reports</th><th>Use here</th></tr>
+        <tr><td>OpenFHE on this machine (i7-3770, 8 threads)</td><td>HMult 352.6 ms, HRotate 324.8 ms (N = 2<sup>16</sup>, 24 limbs, dnum 4); sparse bootstrap 12.1 s</td><td><strong>Calibration</strong>: one parameter fitted to HMult; HRotate predicted within 10%, bootstrap within 23%</td></tr>
+        <tr><td>100x, GPU (Jung et al., <a href="https://eprint.iacr.org/2021/508">ePrint 2021/508</a>)</td><td>Bootstrap 328.25 ms on a V100 (N = 2<sup>16</sup>, L = 34, dnum 5, 106-bit security); 79.4 s single-threaded CPU</td><td>Order of magnitude for GPUs; not modelled (a GPU has no scratchpad of this kind)</td></tr>
+        <tr><td>ARK (<a href="https://arxiv.org/abs/2205.00922">arXiv:2205.00922</a>), Table VII</td><td>HELR iteration (includes a bootstrap): ARK 7.42 ms, CraterLake 15.2 ms, BTS 28.4 ms; ARK 512 MB, 1 TB/s, 418.3 mm<sup>2</sup>, 281.3 W peak</td><td>Order of magnitude only: our ARK-class design bootstraps in 7&ndash;14 ms depending on the algorithm</td></tr>
+        <tr><td>BTS (<a href="https://arxiv.org/abs/2112.15479">arXiv:2112.15479</a>)</td><td>5,556&times; (ResNet-20) and 1,306&times; (logistic regression) over CPU; 373.6 mm<sup>2</sup>, up to 163.2 W</td><td>Context for the memory-bound conclusion</td></tr>
+        <tr><td>TensorFHE (<a href="https://arxiv.org/abs/2212.14191">arXiv:2212.14191</a>)</td><td>913 K NTTs/s and 88 K HMults/s on an A100</td><td>GPU throughput context</td></tr>
+    </table>
+    </div>
+    <p>ASIC papers mostly report <em>amortised</em> metrics (T<sub>A.S.</sub>, application time) at their own parameters, so their numbers are references for scale, not targets to fit. A like-for-like ASIC comparison would need their exact algorithms, which is what the trace interface is for.</p>
+</section>
+
+<section class="slide" id="slide-09">
+    <div class="slide-number">09</div>
+    <h2>Limitations and Extensions</h2>
+    <p>Each limitation is a self-contained exercise, roughly in order of difficulty:</p>
+    <ol>
+        <li><strong>SlotToCoeff-first ordering</strong> and other level placements: move the cheap-at-low-level DFT and measure the bytes saved.</li>
+        <li><strong>Dynamic power management</strong> instead of worst-case clocking: track actual power and clock up when HBM is idle; does the 4 TB/s anomaly disappear?</li>
+        <li><strong>Banked scratchpad and on-chip network</strong> contention, replacing "every unit gets full port bandwidth".</li>
+        <li><strong>Interleaving bootstraps</strong> (or many ciphertexts) to reuse keys across operations, ARK's "inter-operation key reuse".</li>
+        <li><strong>A real trace front end</strong>: instrument OpenFHE's C++ key switching and NTTs, or emit the trace format from HEIR's polynomial-level IR; then compare against this scheme model.</li>
+        <li><strong>Optical extensions</strong>: chained optical stages, redundancy-based error correction, optical base conversion; each with its own precision analysis in <code>precision.py</code>.</li>
+        <li><strong>Correlation</strong> against RTL or an FPGA prototype of one kernel (say an NTT unit), to replace an illustrative coefficient with a measured one.</li>
+    </ol>
+</section>
+
+<section class="slide" id="slide-10">
+    <div class="slide-number">10</div>
+    <h2>Reading List</h2>
+    <ul class="res-list">
+        <li><a href="https://arxiv.org/abs/2109.05371">F1</a> (Feldmann et al., MICRO 2021)<span class="what">The first programmable FHE accelerator: wide-vector units for NTT, modular arithmetic and permutations, and a compiler-managed memory hierarchy, because "data movement becomes the bottleneck".</span></li>
+        <li><a href="https://doi.org/10.1145/3470496.3527393">CraterLake</a> (Samardzic et al., ISCA 2022)<span class="what">F1's successor for unbounded (bootstrapped) computation; 28-bit words, 256 MB on chip.</span></li>
+        <li><a href="https://arxiv.org/abs/2112.15479">BTS</a> (Kim et al., ISCA 2022)<span class="what">Bootstrapping as a first-class citizen; analyses the off-chip bandwidth bootstrapping needs and the parameter sets that suit accelerators.</span></li>
+        <li><a href="https://arxiv.org/abs/2205.00922">ARK</a> (Kim et al., MICRO 2022)<span class="what">Runtime data generation and inter-operation key reuse (Min-KS, OF-Limb): the algorithm-architecture co-design modelled in this series.</span></li>
+        <li><a href="https://doi.org/10.1145/3579371.3589053">SHARP</a> (Kim et al., ISCA 2023)<span class="what">A short-word (36-bit) hierarchical accelerator: word length as a design parameter.</span></li>
+        <li><a href="https://eprint.iacr.org/2021/508">Over 100x Faster Bootstrapping</a> (Jung et al., TCHES 2021) and <a href="https://arxiv.org/abs/2212.14191">TensorFHE</a> (Fan et al., HPCA 2023)<span class="what">GPU bootstrapping: memory-centric kernel fusion, dnum choice, tensor cores for NTTs.</span></li>
+        <li><a href="https://arxiv.org/abs/2207.11872">FAB</a> and <a href="https://arxiv.org/abs/2212.01713">SoK: FHE Accelerators</a><span class="what">An FPGA bootstrapping accelerator, and a survey that benchmarks the field side by side.</span></li>
+        <li><a href="https://heir.dev">HEIR</a> (<a href="https://arxiv.org/abs/2508.11095">arXiv:2508.11095</a>), <a href="https://github.com/openfheorg/openfhe-development">OpenFHE</a> (<a href="https://eprint.iacr.org/2022/915">ePrint 2022/915</a>), <a href="https://github.com/tuneinsight/lattigo">Lattigo</a><span class="what">The compiler and the two libraries a trace front end would target.</span></li>
+        <li>CKKS bootstrapping: <a href="https://eprint.iacr.org/2018/153">Cheon et al. 2018</a>, <a href="https://eprint.iacr.org/2018/1043">Chen, Chillotti &amp; Song 2018</a>, <a href="https://eprint.iacr.org/2019/688">Han &amp; Ki 2019</a>, <a href="https://eprint.iacr.org/2020/1203">Bossuat et al. 2020</a>; hoisting: <a href="https://eprint.iacr.org/2018/244">Halevi &amp; Shoup 2018</a></li>
+        <li>Photonics and FHE: <a href="https://arxiv.org/abs/2609.11613">PHAT</a>, <a href="https://arxiv.org/abs/2506.12962">OptoLink</a>; memory-centric designs: <a href="https://arxiv.org/abs/2311.16293">FHEmem</a>, <a href="https://arxiv.org/abs/2408.09593">Osiris</a></li>
+        <li>Simulator methodology: <a href="https://brendanjameslynskey.github.io/InfSim_10_Further_Learning/">LLM Inference Simulators deck 10</a> (books, courses, DES and architecture papers)</li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-11">
+    <div class="slide-number">11</div>
+    <h2>Practice Questions</h2>
+    <p>FHE-specific additions to the practice questions in <a href="https://brendanjameslynskey.github.io/InfSim_11_Role_Primer/">LLM Inference Simulators deck 11</a>, the role primer.</p>
+    <details class="qa"><summary>Why is CKKS bootstrapping memory-bound on a large accelerator, and what would you change first?</summary>
+        <p>The homomorphic DFT stages use dozens of distinct rotation keys, each 100+ MiB at high levels and each used once per bootstrap, plus a plaintext per diagonal: gigabytes of compulsory traffic against modest arithmetic. More SRAM does not help (each key is used once). Change the algorithm first: key reuse (Min-KS), seeded keys and on-the-fly plaintexts cut key traffic by an order of magnitude; then size SRAM to the new working set and re-check the bound, which moves to compute or power. (Decks 02, 05.)</p></details>
+    <details class="qa"><summary>How would you validate an FHE accelerator simulator before RTL exists?</summary>
+        <p>A ladder: sizes and operation counts against hand formulas and published tables; invariants (dependencies, conservation of work, determinism); analytic checks of the engine (serial chains, flow-shop makespans, roofline bounds); behavioural expectations (more SRAM never raises traffic); property-based tests over random configurations; calibration of throughput against a real library such as OpenFHE with out-of-sample predictions; and differential tests between independent implementations. Then plan correlation against RTL kernels as they arrive. (Deck 03.)</p></details>
+    <details class="qa"><summary>An optical engine computes FFTs very fast. What do you need to know before believing FHE gets faster?</summary>
+        <ul><li>Its effective precision (ENOB) and how many digit planes exact rounding then needs at your limb width.</li><li>Conversions per transform point against butterflies offloaded per point.</li><li>Converter energy per sample (a Walden figure of merit) and its throughput under the power budget.</li><li>Static laser and tuning power.</li><li>Whether the target design is NTT-bound at all: if it is waiting on keys, faster transforms change nothing. (Deck 04.)</li></ul></details>
+    <details class="qa"><summary>How would you get real FHE programs into the simulator?</summary>
+        <p>Define a kernel-level trace format (operations, objects, sizes, keys, dependencies) as the contract. Produce it from a compiler such as HEIR at a polynomial or modular-arithmetic level of its IR, or by instrumenting a library's key-switching and NTT routines. Use the same program compiled to a CPU backend as a functional and timing reference, and track coverage (which operations and parameter sets the front end supports) as an engineering metric. (Decks 03, 05.)</p></details>
+</section>
+
+<section class="slide" id="slide-12">
+    <div class="slide-number">12</div>
+    <h2>What to Take Away</h2>
+    <ul>
+        <li><strong>SRAM alone does not fix key traffic</strong> for a baseline bootstrap; algorithms that reuse keys do, after which 512 MiB is enough here.</li>
+        <li><strong>The ridge</strong>: at 1 TB/s a baseline bootstrap saturates HBM beyond about 1,000 butterflies per cycle; with key reuse, compute and then power bind.</li>
+        <li><strong>Techniques are design-dependent</strong>: a 1.9&times; win on a memory-bound design, a loss on an NTT-starved one.</li>
+        <li><strong>Energy follows bytes and time</strong>: 1,139 &rarr; 607 mJ per bootstrap; static power is half of it; a TDP makes over-provisioned compute useless.</li>
+        <li><strong>Optics</strong> needs both precision and a design that is NTT-bound (deck 04).</li>
+        <li><strong>Every number here is reproducible</strong> from one script, and every claim about the model is a test.</li>
+    </ul>
+    <div class="callout">
+        <div class="callout-label">Where next</div>
+        <p>Back to the <a href="https://github.com/BrendanJamesLynskey/FHE_Hub_Accelerator_Simulators">series hub</a>, the <a href="https://github.com/BrendanJamesLynskey/FHE_Accelerator_Sim">code</a>, the sister series <a href="https://brendanjameslynskey.github.io/LLM_Hub_Inference_Simulators/">LLM Inference Simulators</a>, or the FHE fundamentals in the <a href="https://github.com/BrendanJamesLynskey/Mathematics#cryptography">Cryptography section of the Mathematics hub</a>.</p>
+    </div>
+</section>
+
+<!-- ════════════════════════════════════ Footer ════════════════════════════════════ -->
+<footer class="footer">
+    <p>Part of the <a href="https://github.com/BrendanJamesLynskey/FHE_Hub_Accelerator_Simulators">FHE Accelerator Simulators series</a> &middot; code: <a href="https://github.com/BrendanJamesLynskey/FHE_Accelerator_Sim">FHE_Accelerator_Sim</a></p>
+    <p style="margin-top: 0.5rem; font-size: 0.8rem;"><a href="https://brendanjameslynskey.github.io/FHESim_04_Optical_NTT_Engines/">&larr; 04 Optical NTT Engines: Precision, Conversion and Power</a></p>
+    <p style="margin-top: 0.5rem; font-size: 0.8rem;">FHE fundamentals: <a href="https://github.com/BrendanJamesLynskey/Mathematics#cryptography">the Cryptography section of the Mathematics hub</a> &middot; <a href="https://brendanjameslynskey.github.io/Cryptography/08-fully-homomorphic-encryption/">Cryptography 08: Fully Homomorphic Encryption</a> &middot; sister series: <a href="https://github.com/BrendanJamesLynskey/LLM_Hub_Inference_Simulators">LLM Inference Simulators</a></p>
+</footer>
+
+<script>
+    // Smooth scroll for TOC links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    });
+
+    // Subtle fade-in on scroll
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.slide').forEach(slide => {
+        slide.style.opacity = '0';
+        slide.style.transform = 'translateY(30px)';
+        slide.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        observer.observe(slide);
+    });
+</script>
+
+</body>
+</html>
