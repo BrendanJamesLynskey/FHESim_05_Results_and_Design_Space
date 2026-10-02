@@ -860,6 +860,7 @@
     </div>
     <ul>
         <li><strong>With the baseline algorithm, no SRAM size stops key traffic.</strong> Each of the 85 rotation keys is used once per bootstrap, so 6.74 GB is compulsory from 512 MiB upwards. More SRAM only removes ciphertext spills.</li>
+        <li><strong>Real programs agree.</strong> LoLa as compiled by HEIR, with a forced bootstrap at the N = 2<sup>17</sup>, 47-prime parameters HEIR chooses, takes 203 ms with 512 MiB of scratchpad and 101 ms with 2 GiB (deck 03).</li>
         <li><strong>Across bootstraps</strong> keys could be reused, but only if the whole key set fits: two back-to-back bootstraps first share keys at 16 GiB (3.37 GB of keys per bootstrap, 7.99 ms).</li>
         <li><strong>With key reuse built into the algorithm</strong>, 512 MiB is enough: total HBM traffic falls to 0.78 GB per bootstrap. The answer to "how much SRAM?" depends on the algorithm. That is why ARK co-designed the two, and why the simulator models both.</li>
         <li>Monotonicity (more SRAM never raises traffic) is a tested property, so <code>search.min_sram</code> can bisect for the smallest adequate size.</li>
@@ -1011,7 +1012,7 @@
     };
 
     // ── workload (workload.py) ───────────────────────────────────────
-    const STAGES = ['modraise', 'cts', 'evalmod', 'stc'];
+    const STAGES = ['modraise', 'cts', 'evalmod', 'stc', 'app', 'app_post'];
     const K = (kind, amount, words) => ({ kind, amount, words });
     const kNtt = (limbs, N, inv) => K(inv ? 'intt' : 'ntt', limbs, 2 * limbs * N);
     const kMac = ops => K('mac', ops, 3 * ops);
@@ -1730,7 +1731,7 @@
     </div>
     <ul>
         <li><strong>Once key traffic is under control, the MAC lanes bind</strong> (base conversion and multiply-adds), so the best design is the widest one with enough bandwidth, and the fastest point is also the most energy-efficient. Under worst-case clocking the same sweep's best points were power-bound; that verdict was an artefact of reserving power the workload never draws.</li>
-        <li><strong>Simulator speed:</strong> one ark-set bootstrap (203 HE ops, 1,153 kernels) takes about 70 ms in Python/SimPy and about 12 ms in the JavaScript port (70&ndash;73 ms and 11&ndash;13 ms across recorded runs). A one-event-per-kernel abstraction is what makes interactive design maps possible (sister series, <a href="https://brendanjameslynskey.github.io/InfSim_08_Accelerating_Simulators/">deck 08</a>).</li>
+        <li><strong>Simulator speed:</strong> one ark-set bootstrap (203 HE ops, 1,153 kernels) takes about 70 ms in Python/SimPy and about 12 ms in the JavaScript port (70&ndash;74 ms and 11&ndash;13 ms across recorded runs). A one-event-per-kernel abstraction is what makes interactive design maps possible (sister series, <a href="https://brendanjameslynskey.github.io/InfSim_08_Accelerating_Simulators/">deck 08</a>).</li>
         <li><strong>Cheaper still:</strong> <code>search.analytic_bound</code> bounds latency from the trace with no simulation (10.01 ms for the default design, against 13.94 ms simulated). Use it to prune a search before simulating, never to replace simulation; the 28% gap is the overlap structure it cannot see.</li>
     </ul>
 </section>
@@ -1760,7 +1761,7 @@
         <li><strong>Smarter power policies.</strong> The power manager is greedy and first-come: the first kernel to ask gets the highest clock that fits. Try fair-share or critical-path-aware allocation, and DVFS transition latency.</li>
         <li><strong>Banked scratchpad and on-chip network</strong> contention, replacing "every unit gets full port bandwidth".</li>
         <li><strong>Interleaving bootstraps</strong> (or many ciphertexts) to reuse keys across operations, ARK's "inter-operation key reuse".</li>
-        <li><strong>A compiler front end</strong>: emit the trace format from HEIR's polynomial-level IR and compare against both the scheme model and the recorded OpenFHE streams, which are already in the repo (<code>calibration/openfhe_trace</code>). Then add OpenFHE's rescale-on-use as a scheme-model option, to close the remaining EvalMod gap.</li>
+        <li><strong>More from the compiler.</strong> The HEIR front end (deck 03) reads HEIR's <code>ckks</code> IR. Next steps: support several bootstraps per program with per-segment stage spans; let the simulator feed costs back into HEIR's bootstrap placement (its ILP placer accepts a cost model); and cross-check the Lattigo backend as well as OpenFHE.</li>
         <li><strong>Optical extensions</strong>: chained optical stages, redundancy-based error correction, optical base conversion; each with its own precision analysis in <code>precision.py</code>.</li>
         <li><strong>Correlation</strong> against RTL or an FPGA prototype of one kernel (say an NTT unit), to replace an illustrative coefficient with a measured one.</li>
     </ol>
