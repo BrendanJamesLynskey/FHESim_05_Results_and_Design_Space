@@ -782,6 +782,11 @@
             .ladder-row { grid-template-columns: 1fr; gap: 0.2rem; }
             .ladder-row .speed { text-align: left; }
         }
+        .concepts { background: var(--bg-card); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 6px; padding: 0.75rem 1rem; margin-top: 1.25rem; font-size: 0.88rem; }
+        .concepts p { margin: 0 0 0.4rem; color: var(--text-secondary); }
+        .concepts .chips { display: flex; flex-wrap: wrap; gap: 0.35rem 0.5rem; }
+        .concepts .chips a { border: 1px solid var(--border); border-radius: 999px; padding: 0.1rem 0.6rem; text-decoration: none; font-size: 0.82rem; }
+        .concepts .chips a:hover { border-color: var(--accent); }
     </style>
 </head>
 <body>
@@ -828,6 +833,10 @@
         <li><a href="#slide-11">Practice Questions</a></li>
         <li><a href="#slide-12">What to Take Away</a></li>
     </ul>
+    <div class="concepts">
+        <p><strong>Concepts used here, and where they are explained.</strong> Each links to its <a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#glossary">series glossary</a> entry: a short explanation, then links to the slides that explain it in depth, in this series, the Cryptography decks or LLM Inference Simulators.</p>
+        <div class="chips"><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-scratchpad" title="The accelerator&#x27;s on-chip SRAM, modelled as a least-recently-used store of ciphertexts, keys and plaintexts. A miss loads from HBM; evicting a live ciphertext writes it back (a spill).">Scratchpad, LRU and spills</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-hbm" title="Off-chip high-bandwidth memory. Evaluation keys and DFT plaintexts are too big to keep on chip, so they stream from HBM, which is why bootstrapping is often memory-bound.">HBM and key streaming</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-roofline" title="Performance is capped by compute or by memory bandwidth; the ridge point is the arithmetic intensity where the two meet. Work below it is memory-bound.">Roofline and ridge point</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-bound" title="The simulator&#x27;s verdict: the most-utilised resource sets the bound (HBM, NTT units, multiply-add lanes), or power when the power limit throttles a compute-bound design.">NTT-, MAC-, memory- and power-bound</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-minks" title="Algorithmic ways to cut key and plaintext traffic: rotate iteratively by one step so a BSGS loop reuses one key (Min-KS, from ARK), regenerate half of each key from a seed, and generate DFT plaintexts on chip.">Min-KS, seeded keys and on-the-fly plaintexts</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-lazymoddown" title="Keeping rotated ciphertexts in the extended Q·P basis and doing one ModDown per DFT level, so baby steps cost no NTTs and many more of them are used. Fewer NTTs, more keys.">Lazy ModDown (OpenFHE's BSGS)</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-stcfirst" title="Running SlotToCoeff before ModRaise, on the nearly exhausted input: cheap keys, one EvalMod for real data, and its levels are not taken from the top. OpenFHE&#x27;s BTSlotsEncoding.">SlotToCoeff first</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-power" title="Static power is drawn all the time (leakage, lasers, tuning); dynamic energy is paid per operation and per byte moved. Energy = static × time + Σ operations × energy each.">Static and dynamic power</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-tdp" title="The thermal design power is the limit the chip must not exceed. DVFS lowers clock and voltage together (energy per operation ~ clock²); a power cap throttles to stay under a limit.">TDP, DVFS and power caps</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-powermgr" title="Worst-case clocking picks one clock at which everything at full rate fits the TDP; a dynamic manager gives each kernel the highest clock that fits the power actually free at that moment.">Dynamic power manager against worst-case clocking</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-pareto" title="Simulate a grid of designs; a design is Pareto-optimal if no other is better in both latency and energy. The front is the set of sensible choices; everything else is dominated.">Design sweeps and Pareto fronts</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-calibration" title="Fit as few model coefficients as possible to measurements (here, one rate to an OpenFHE multiplication), then judge the model on quantities it was not fitted to.">Calibration and out-of-sample prediction</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-tas" title="Bootstrap time plus the multiplications it enables, divided by the levels left and the slots: the cost per useful operation. Used by ARK and the 100x GPU paper to compare different parameters.">Amortised time per slot (T<sub>A.S.</sub>)</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-heir" title="Google&#x27;s MLIR-based FHE compiler: it chooses parameters, packing, rotations, levels and bootstrap placement, and emits code for libraries or hardware. Its ckks-dialect output drives this simulator.">HEIR</a></div>
+    </div>
 </section>
 
 <section class="slide" id="slide-01">
@@ -907,10 +916,13 @@
         <tr><td>+ Min-KS</td><td>8.51 ms</td><td>1.15</td><td>memory</td><td>21.54 ms</td><td>NTT</td></tr>
         <tr><td>+ Min-KS + seeded keys</td><td>8.86 ms</td><td>0.58</td><td>MAC</td><td>22.07 ms</td><td>NTT</td></tr>
         <tr><td>+ Min-KS + seeded keys + OTF plaintexts</td><td>7.19 ms</td><td>0.58</td><td>MAC</td><td>26.65 ms</td><td>NTT</td></tr>
+        <tr><td>SlotToCoeff first</td><td>11.51 ms</td><td>5.73</td><td>memory</td><td>12.74 ms</td><td>NTT</td></tr>
+        <tr><td>+ all three + SlotToCoeff first</td><td>5.42 ms</td><td>0.50</td><td>MAC</td><td>20.01 ms</td><td>NTT</td></tr>
     </table>
     </div>
     <ul>
         <li><strong>On the memory-bound design</strong> key reuse (Min-KS) is worth 1.6&times; on its own and the full set 1.9&times;. Seeded keys on their own <em>lose</em> a little once the design is no longer memory-bound: their PRNG work lands on the MAC lanes, which are now the bottleneck.</li>
+        <li><strong>SlotToCoeff first is the exception: it helps every design.</strong> It runs the second DFT on the nearly exhausted input (cheap keys), needs one EvalMod instead of two for real-valued data, and leaves 10 levels instead of 7, so the cost per useful level falls from 1.99 to 1.15 ms on the ARK-class design and from 2.49 to 1.27 ms on the NTT-starved one. With the key-traffic techniques it reaches 0.54 ms per useful level.</li>
         <li><strong>A CPU library's choice can be wrong for an accelerator.</strong> OpenFHE's BSGS split, recorded from a real OpenFHE bootstrap (deck 02), saves a third of the NTTs, which is right for a CPU. It needs 109 rotations instead of 85 and 28% more key traffic, so on the memory-bound ARK-class design it is 42% slower. It doesn't even win on the NTT-starved design, because its extra traffic outweighs the saved transforms.</li>
         <li><strong>On the NTT-starved design</strong> every technique hurts: each trades arithmetic for bytes, and there are no spare cycles to trade. Hoisting, which saves NTTs, is the only one that helps (no hoisting is 15% slower).</li>
         <li>Lesson: techniques are not universally good. The simulator's job is to say which ones pay on <em>this</em> design.</li>
@@ -1128,8 +1140,8 @@
                 const k = split[j], d = Math.min(2 ** (k + 1) - 1, 2 ** p.slotsLog), tag = `${prefix}${j}`;
                 const lazy = o.lazyModdown && o.hoisting && !o.minKs;
                 let n1;
-                if (lazy && d === p.slots) {
-                    const sl = p.slots, c = Math.floor(Math.sqrt(sl - 1)) + 1;     // ceil(sqrt(slots)), exact for these sizes
+                if (lazy && d === 2 ** p.slotsLog) {
+                    const sl = 2 ** p.slotsLog, c = Math.floor(Math.sqrt(sl - 1)) + 1;     // ceil(sqrt(slots)), exact for these sizes
                     n1 = sl > 1 ? Math.min(2 ** (c.toString(2).length - 1 + 1), d) : 1;
                 } else if (lazy) n1 = Math.min(2 ** (Math.floor(k / 2) + 1 + (d > 7 ? 1 : 0)), d);
                 else n1 = Math.min(2 ** cdiv(k + 1, 2), d);
@@ -1185,7 +1197,19 @@
             for (let r = 0; r < p.doubleAngle; r++) y = B.hmult(y, y);
             return y;
         };
+        B.bootstrapStcFirst = x => {
+            if (B.levels[x] < p.stcLevels) throw new Error(`StC-first needs the input at level >= ${p.stcLevels}`);
+            B.stage = 'stc'; x = B.dft(x, 'stc', p.stcLevels);
+            if (!p.fullSlots) x = B.add([x, B.hrot(x, 'stcfirst.rep')]);
+            B.stage = 'modraise'; x = B.modraise(x);
+            B.stage = 'cts'; x = B.dft(x, 'cts', p.ctsLevels);
+            x = B.add([x, B.hrot(x, 'conj')]);
+            B.stage = 'evalmod'; x = B.evalmod(x);
+            if (B.levels[x] < 0) throw new Error(`${p.name}: bootstrapping needs more than L = ${p.L} levels`);
+            return x;
+        };
         B.bootstrap = x => {
+            if (o.stcFirst) return B.bootstrapStcFirst(x);
             B.stage = 'modraise'; x = B.modraise(x);
             B.stage = 'cts'; x = B.dft(x, 'cts', p.ctsLevels);
             const c = B.hrot(x, 'conj');
@@ -1199,11 +1223,11 @@
         return B;
     }
     function bootOptions(o) {
-        return Object.assign({ nBoot: 1, hoisting: true, minKs: false, seededKeys: false, otfPlaintexts: false, lazyModdown: false }, o || {});
+        return Object.assign({ nBoot: 1, hoisting: true, minKs: false, seededKeys: false, otfPlaintexts: false, lazyModdown: false, stcFirst: false }, o || {});
     }
     function bootstrapTrace(p, opts) {
         const o = bootOptions(opts), B = Builder(p, o);
-        for (let i = 0; i < o.nBoot; i++) { B.boot = i; B.bootstrap(B.externalCt(0)); }
+        for (let i = 0; i < o.nBoot; i++) { B.boot = i; B.bootstrap(B.externalCt(o.stcFirst ? p.stcLevels : 0)); }
         return { params: p, ops: B.ops, sizes: B.sizes, external: B.external, levels: B.levels, options: o };
     }
     function heOpTrace(p, op, level, n) {
@@ -1668,7 +1692,7 @@
     }
 
     // ── convenience for the parity test and the deck ─────────────────
-    const camel = o => { const m = { n_boot: 'nBoot', min_ks: 'minKs', seeded_keys: 'seededKeys', otf_plaintexts: 'otfPlaintexts', lazy_moddown: 'lazyModdown' }, out = {};
+    const camel = o => { const m = { n_boot: 'nBoot', min_ks: 'minKs', seeded_keys: 'seededKeys', otf_plaintexts: 'otfPlaintexts', lazy_moddown: 'lazyModdown', stc_first: 'stcFirst' }, out = {};
         for (const [k, v] of Object.entries(o || {})) out[m[k] || k] = v; return out; };
     function simulateNamed(paramsName, hwName, opts, dvfs, hwOver) {
         const p = mkParams(PARAMS[paramsName]);
@@ -1757,7 +1781,7 @@
     <h2>Limitations and Extensions</h2>
     <p>Each limitation is a self-contained exercise, roughly in order of difficulty:</p>
     <ol>
-        <li><strong>SlotToCoeff-first ordering</strong> and other level placements: move the cheap-at-low-level DFT and measure the bytes saved.</li>
+        <li><strong>Complex-valued data with SlotToCoeff first</strong>: the model assumes real-valued data (one EvalMod); add the second EvalMod for complex slots, and measure other level budgets for the two DFTs.</li>
         <li><strong>Smarter power policies.</strong> The power manager is greedy and first-come: the first kernel to ask gets the highest clock that fits. Try fair-share or critical-path-aware allocation, and DVFS transition latency.</li>
         <li><strong>Banked scratchpad and on-chip network</strong> contention, replacing "every unit gets full port bandwidth".</li>
         <li><strong>Interleaving bootstraps</strong> (or many ciphertexts) to reuse keys across operations, ARK's "inter-operation key reuse".</li>
@@ -1796,7 +1820,7 @@
     <details class="qa"><summary>An optical engine computes FFTs very fast. What do you need to know before believing FHE gets faster?</summary>
         <ul><li>Its effective precision (ENOB) and how many digit planes exact rounding then needs at your limb width.</li><li>Conversions per transform point against butterflies offloaded per point.</li><li>Converter energy per sample (a Walden figure of merit) and its throughput under the power budget.</li><li>Static laser and tuning power.</li><li>Whether the target design is NTT-bound at all: if it is waiting on keys, faster transforms change nothing. (Deck 04.)</li></ul></details>
     <details class="qa"><summary>How would you get real FHE programs into the simulator?</summary>
-        <p>Define a kernel-level trace format (operations, objects, sizes, keys, dependencies) as the contract. Produce it from a compiler such as HEIR at a polynomial or modular-arithmetic level of its IR, or by instrumenting a library's key-switching and NTT routines. This repo does the library route for OpenFHE: a 78-line patch logs the stream, and replaying it predicts the measured bootstrap time to within 11%. Use the same program compiled to a CPU backend as a functional and timing reference, and track coverage (which operations and parameter sets the front end supports) as an engineering metric. (Decks 03, 05.)</p></details>
+        <p>Define a kernel-level trace format (operations, objects, sizes, keys, dependencies) as the contract. Produce it from a compiler such as HEIR at a polynomial or modular-arithmetic level of its IR, or by instrumenting a library's key-switching and NTT routines. This repo does the library route for OpenFHE: an 82-line patch logs the stream, and replaying it predicts the measured bootstrap time to within 11%. Use the same program compiled to a CPU backend as a functional and timing reference, and track coverage (which operations and parameter sets the front end supports) as an engineering metric. (Decks 03, 05.)</p></details>
 </section>
 
 <section class="slide" id="slide-12">
@@ -1805,7 +1829,7 @@
     <ul>
         <li><strong>SRAM alone does not fix key traffic</strong> for a baseline bootstrap; algorithms that reuse keys do, after which 512 MiB is enough here.</li>
         <li><strong>The ridge</strong>: at 1 TB/s a baseline bootstrap saturates HBM beyond about 1,000 butterflies per cycle; with key reuse, the MAC lanes bind; power binds only under a much lower TDP.</li>
-        <li><strong>Techniques are design-dependent</strong>: a 1.9&times; win on a memory-bound design, a loss on an NTT-starved one.</li>
+        <li><strong>Techniques are design-dependent</strong>: a 1.9&times; win on a memory-bound design, a loss on an NTT-starved one. SlotToCoeff first is the exception and helps both, cutting the cost per useful level by 42&ndash;49%.</li>
         <li><strong>Energy follows bytes and time</strong>: 1,139 &rarr; 607 mJ per bootstrap; static power is half of it; a dynamic power manager keeps over-provisioned compute useful under a TDP that worst-case clocking would waste.</li>
         <li><strong>Optics</strong> needs both precision and a design that is NTT-bound (deck 04).</li>
         <li><strong>Every number here is reproducible</strong> from one script, and every claim about the model is a test.</li>
@@ -1818,7 +1842,7 @@
 
 <!-- ════════════════════════════════════ Footer ════════════════════════════════════ -->
 <footer class="footer">
-    <p>Part of the <a href="https://github.com/BrendanJamesLynskey/FHE_Hub_Accelerator_Simulators">FHE Accelerator Simulators series</a> &middot; code: <a href="https://github.com/BrendanJamesLynskey/FHE_Accelerator_Sim">FHE_Accelerator_Sim</a></p>
+    <p>Part of the <a href="https://github.com/BrendanJamesLynskey/FHE_Hub_Accelerator_Simulators">FHE Accelerator Simulators series</a> &middot; <a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#glossary">glossary: every concept and where it is explained</a> &middot; code: <a href="https://github.com/BrendanJamesLynskey/FHE_Accelerator_Sim">FHE_Accelerator_Sim</a></p>
     <p style="margin-top: 0.5rem; font-size: 0.8rem;"><a href="https://brendanjameslynskey.github.io/FHESim_04_Optical_NTT_Engines/">&larr; 04 Optical NTT Engines: Precision, Conversion and Power</a></p>
     <p style="margin-top: 0.5rem; font-size: 0.8rem;">FHE fundamentals: <a href="https://github.com/BrendanJamesLynskey/Mathematics#cryptography">the Cryptography section of the Mathematics hub</a> &middot; <a href="https://brendanjameslynskey.github.io/Cryptography/08-fully-homomorphic-encryption/">Cryptography 08: Fully Homomorphic Encryption</a> &middot; sister series: <a href="https://github.com/BrendanJamesLynskey/LLM_Hub_Inference_Simulators">LLM Inference Simulators</a></p>
 </footer>
