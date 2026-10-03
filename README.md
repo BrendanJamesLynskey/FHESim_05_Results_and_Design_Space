@@ -1,8 +1,8 @@
 # FHE Accelerator Simulators 05 — Results and the Design Space
 
-What the simulator says: SRAM size against key traffic, the NTT-bound and memory-bound regimes, power and energy per bootstrap under a TDP, the algorithmic acceleration techniques, a design-space sweep, the model's limitations, a reading list (F1, CraterLake, BTS, ARK, SHARP, GPU work, HEIR, OpenFHE, Lattigo) and practice questions.
+What the simulator says: SRAM size against key traffic, the NTT-bound and memory-bound regimes, power and energy per bootstrap under a TDP, the algorithmic acceleration techniques, a design-space sweep, silicon area as a third axis (a three-way power, performance and area front), the model's limitations, a reading list (F1, CraterLake, BTS, ARK, SHARP, GPU work, HEIR, OpenFHE, Lattigo) and practice questions.
 
-Topics: SRAM sizing, Regimes, Energy / bootstrap, Min-KS, Pareto, Reading list.
+Topics: SRAM sizing, Regimes, Energy / bootstrap, Min-KS, Area, Pareto, Reading list.
 
 **Live site:** https://brendanjameslynskey.github.io/FHESim_05_Results_and_Design_Space/
 

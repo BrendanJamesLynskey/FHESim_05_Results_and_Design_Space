@@ -791,6 +791,8 @@
         .chart-pair > *, .diagram-grid > *, .sim-grid > * { min-width: 0; }   /* let wide code scroll inside its column */
         .slide p code, .slide li code, .slide td code { overflow-wrap: anywhere; }
         @media (max-width: 640px) { .diagram-box { white-space: normal; max-width: 100%; } }   /* long boxes must wrap on phones */
+        p.src { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-secondary); margin: -0.75rem 0 1rem; }
+        p.src a { color: var(--text-secondary); }
     </style>
 </head>
 <body>
@@ -798,13 +800,14 @@
 <header class="hero">
     <div class="series-label">FHE Accelerator Simulators &mdash; Presentation 05</div>
     <h1>Results and the <span class="accent">Design Space</span></h1>
-    <p class="subtitle">What the simulator says: SRAM size against key traffic, the NTT-bound and memory-bound regimes, power and energy per bootstrap under a TDP, the algorithmic acceleration techniques, a design-space sweep, the model's limitations, a reading list (F1, CraterLake, BTS, ARK, SHARP, GPU work, HEIR, OpenFHE, Lattigo) and practice questions.</p>
+    <p class="subtitle">What the simulator says: SRAM size against key traffic, the NTT-bound and memory-bound regimes, power and energy per bootstrap under a TDP, the algorithmic acceleration techniques, a design-space sweep, silicon area as a third axis (a three-way power, performance and area front), the model's limitations, a reading list (F1, CraterLake, BTS, ARK, SHARP, GPU work, HEIR, OpenFHE, Lattigo) and practice questions.</p>
 
     <div class="tags">
         <span class="tag">SRAM sizing</span>
         <span class="tag">Regimes</span>
         <span class="tag">Energy / bootstrap</span>
         <span class="tag">Min-KS</span>
+        <span class="tag">Area</span>
         <span class="tag">Pareto</span>
         <span class="tag">Reading list</span>
     </div>
@@ -825,7 +828,7 @@
     <h2>Topics We'll Cover</h2>
     <ul class="contents-list">
         <li><a href="#slide-01">The Questions, and the Ground Rules</a></li>
-        <li><a href="#slide-02">SRAM Against Key Traffic</a></li>
+        <li><a href="#slide-02">SRAM Against Key Traffic and Area</a></li>
         <li><a href="#slide-03">NTT-Bound Against Memory-Bound</a></li>
         <li><a href="#slide-04">Acceleration Techniques</a></li>
         <li><a href="#slide-05">Power and Energy per Bootstrap</a></li>
@@ -839,7 +842,7 @@
     </ul>
     <div class="concepts">
         <p><strong>Concepts used here, and where they are explained.</strong> Each links to its <a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#glossary">series glossary</a> entry: a short explanation, then links to the slides that explain it in depth, in this series, the Cryptography decks or LLM Inference Simulators.</p>
-        <div class="chips"><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-scratchpad" title="The accelerator&#x27;s on-chip SRAM, modelled as a least-recently-used store of ciphertexts, keys and plaintexts. A miss loads from HBM; evicting a live ciphertext writes it back (a spill).">Scratchpad, LRU and spills</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-hbm" title="Off-chip high-bandwidth memory. Evaluation keys and DFT plaintexts are too big to keep on chip, so they stream from HBM, which is why bootstrapping is often memory-bound.">HBM and key streaming</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-roofline" title="Performance is capped by compute or by memory bandwidth; the ridge point is the arithmetic intensity where the two meet. Work below it is memory-bound.">Roofline and ridge point</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-bound" title="The simulator&#x27;s verdict: the most-utilised resource sets the bound (HBM, NTT units, multiply-add lanes), or power when the power limit throttles a compute-bound design.">NTT-, MAC-, memory- and power-bound</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-minks" title="Algorithmic ways to cut key and plaintext traffic: rotate iteratively by one step so a BSGS loop reuses one key (Min-KS, from ARK), regenerate half of each key from a seed, and generate DFT plaintexts on chip.">Min-KS, seeded keys and on-the-fly plaintexts</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-lazymoddown" title="Keeping rotated ciphertexts in the extended Q·P basis and doing one ModDown per DFT level, so baby steps cost no NTTs and many more of them are used. Fewer NTTs, more keys.">Lazy ModDown (OpenFHE's BSGS)</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-stcfirst" title="Running SlotToCoeff before ModRaise, on the nearly exhausted input: cheap keys, one EvalMod for real data, and its levels are not taken from the top. OpenFHE&#x27;s BTSlotsEncoding.">SlotToCoeff first</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-power" title="Static power is drawn all the time (leakage, lasers, tuning); dynamic energy is paid per operation and per byte moved. Energy = static × time + Σ operations × energy each.">Static and dynamic power</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-tdp" title="The thermal design power is the limit the chip must not exceed. DVFS lowers clock and voltage together (energy per operation ~ clock²); a power cap throttles to stay under a limit.">TDP, DVFS and power caps</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-powermgr" title="Worst-case clocking picks one clock at which everything at full rate fits the TDP; a dynamic manager gives each kernel the highest clock that fits the power actually free at that moment.">Dynamic power manager against worst-case clocking</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-pareto" title="Simulate a grid of designs; a design is Pareto-optimal if no other is better in both latency and energy. The front is the set of sensible choices; everything else is dominated.">Design sweeps and Pareto fronts</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-calibration" title="Fit as few model coefficients as possible to measurements (here, one rate to an OpenFHE multiplication), then judge the model on quantities it was not fitted to.">Calibration and out-of-sample prediction</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-tas" title="Bootstrap time plus the multiplications it enables, divided by the levels left and the slots: the cost per useful operation. Used by ARK and the 100x GPU paper to compare different parameters.">Amortised time per slot (T<sub>A.S.</sub>)</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-heir" title="Google&#x27;s MLIR-based FHE compiler: it chooses parameters, packing, rotations, levels and bootstrap placement, and emits code for libraries or hardware. Its ckks-dialect output drives this simulator.">HEIR</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-differential" title="Running two independent implementations on the same input and requiring identical output, here the Python simulator and its JavaScript port.">Differential testing and a bit-exact twin</a></div>
+        <div class="chips"><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-scratchpad" title="The accelerator&#x27;s on-chip SRAM, modelled as a least-recently-used store of ciphertexts, keys and plaintexts. A miss loads from HBM; evicting a live ciphertext writes it back (a spill).">Scratchpad, LRU and spills</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-hbm" title="Off-chip high-bandwidth memory. Evaluation keys and DFT plaintexts are too big to keep on chip, so they stream from HBM, which is why bootstrapping is often memory-bound.">HBM and key streaming</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-roofline" title="Performance is capped by compute or by memory bandwidth; the ridge point is the arithmetic intensity where the two meet. Work below it is memory-bound.">Roofline and ridge point</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-bound" title="The simulator&#x27;s verdict: the most-utilised resource sets the bound (HBM, NTT units, multiply-add lanes), or power when the power limit throttles a compute-bound design.">NTT-, MAC-, memory- and power-bound</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-minks" title="Algorithmic ways to cut key and plaintext traffic: rotate iteratively by one step so a BSGS loop reuses one key (Min-KS, from ARK), regenerate half of each key from a seed, and generate DFT plaintexts on chip.">Min-KS, seeded keys and on-the-fly plaintexts</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-lazymoddown" title="Keeping rotated ciphertexts in the extended Q·P basis and doing one ModDown per DFT level, so baby steps cost no NTTs and many more of them are used. Fewer NTTs, more keys.">Lazy ModDown (OpenFHE's BSGS)</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-stcfirst" title="Running SlotToCoeff before ModRaise, on the nearly exhausted input: cheap keys, one EvalMod for real data, and its levels are not taken from the top. OpenFHE&#x27;s BTSlotsEncoding.">SlotToCoeff first</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-power" title="Static power is drawn all the time (leakage, lasers, tuning); dynamic energy is paid per operation and per byte moved. Energy = static × time + Σ operations × energy each.">Static and dynamic power</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-tdp" title="The thermal design power is the limit the chip must not exceed. DVFS lowers clock and voltage together (energy per operation ~ clock²); a power cap throttles to stay under a limit.">TDP, DVFS and power caps</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-powermgr" title="Worst-case clocking picks one clock at which everything at full rate fits the TDP; a dynamic manager gives each kernel the highest clock that fits the power actually free at that moment.">Dynamic power manager against worst-case clocking</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-area" title="Die area in mm² per component (NTT, MAC and permutation units, scratchpad, uncore, HBM PHYs). The simulator&#x27;s model is at 7 nm, calibrated from ARK&#x27;s published breakdown and a CACTI sweep, and illustrative; area never changes a simulated time or energy.">Silicon area and the area model</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-yield" title="The fraction of dies with no fatal defect: Poisson e^(−A·D_0) or Murphy&#x27;s model, which is kinder to large dies. With dies per wafer it turns area into cost per good die, which grows faster than area.">Die yield and silicon cost</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-pareto" title="Simulate a grid of designs; a design is Pareto-optimal if no other is at least as good on every metric (latency, energy, and now area) and better on one. The front is the set of sensible choices; everything else is dominated.">Design sweeps and Pareto fronts</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-calibration" title="Fit as few model coefficients as possible to measurements (here, one rate to an OpenFHE multiplication), then judge the model on quantities it was not fitted to.">Calibration and out-of-sample prediction</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-tas" title="Bootstrap time plus the multiplications it enables, divided by the levels left and the slots: the cost per useful operation. Used by ARK and the 100x GPU paper to compare different parameters.">Amortised time per slot (T<sub>A.S.</sub>)</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-heir" title="Google&#x27;s MLIR-based FHE compiler: it chooses parameters, packing, rotations, levels and bootstrap placement, and emits code for libraries or hardware. Its ckks-dialect output drives this simulator.">HEIR</a><a href="https://brendanjameslynskey.github.io/FHE_Hub_Accelerator_Simulators/#g-differential" title="Running two independent implementations on the same input and requiring identical output, here the Python simulator and its JavaScript port.">Differential testing and a bit-exact twin</a></div>
     </div>
 </section>
 
@@ -851,6 +854,7 @@
         <li><strong>When is a design NTT-bound, memory-bound or power-bound?</strong></li>
         <li><strong>Which algorithmic techniques matter, and on which designs?</strong></li>
         <li><strong>What does a bootstrap cost in energy</strong> under a power limit?</li>
+        <li><strong>And in silicon area</strong>: which designs are worth their mm&sup2;?</li>
     </ol>
     <div class="callout">
         <div class="callout-label">Ground rules</div>
@@ -860,7 +864,7 @@
 
 <section class="slide" id="slide-02">
     <div class="slide-number">02</div>
-    <h2>SRAM Against Key Traffic</h2>
+    <h2>SRAM Against Key Traffic and Area</h2>
     <div class="table-wrap">
     <table>
         <tr><th>SRAM</th><th>Baseline: bootstrap</th><th>key GB</th><th>all HBM GB</th><th>Min-KS + seeded + OTF: bootstrap</th><th>key GB</th><th>all HBM GB</th></tr>
@@ -877,6 +881,25 @@
         <li><strong>Across bootstraps</strong> keys could be reused, but only if the whole key set fits: two back-to-back bootstraps first share keys at 16 GiB (3.37 GB of keys per bootstrap, 7.99 ms).</li>
         <li><strong>With key reuse built into the algorithm</strong>, 512 MiB is enough: total HBM traffic falls to 0.78 GB per bootstrap. The answer to "how much SRAM?" depends on the algorithm. That is why ARK co-designed the two, and why the simulator models both.</li>
         <li>Monotonicity (more SRAM never raises traffic) is a tested property, so <code>search.min_sram</code> can bisect for the smallest adequate size.</li>
+    </ul>
+    <p><strong>The third axis: area.</strong> SRAM is not free. The simulator's <a href="https://github.com/BrendanJamesLynskey/FHE_Accelerator_Sim#power-performance-and-area-ppa-area-yield-and-cost">area model</a> (7 nm; units from ARK's published breakdown, SRAM from a <a href="https://brendanjameslynskey.github.io/SimEng_12_Measurement_Tools_and_Methods/#card-cacti">CACTI</a> sweep; <strong>illustrative</strong>) prices the same sweep in mm&sup2;, with all three key-traffic techniques. "Pareto" marks designs no other design beats on latency, energy <em>and</em> area:</p>
+    <div class="table-wrap">
+    <table>
+        <tr><th>SRAM MiB</th><th>bootstrap</th><th>mJ</th><th>die mm²</th><th>perf/mm² (1/s/mm²)</th><th>perf/W (1/J)</th><th>Pareto</th><th>verdict</th></tr>
+        <tr><td>128</td><td>21.22 ms</td><td>1691</td><td>253.5</td><td>0.186</td><td>0.59</td><td>yes</td><td>memory-bound</td></tr>
+        <tr><td>256</td><td>8.71 ms</td><td>774</td><td>324.8</td><td>0.354</td><td>1.29</td><td>yes</td><td>MAC-bound</td></tr>
+        <tr><td>384</td><td>7.56 ms</td><td>646</td><td>392.3</td><td>0.337</td><td>1.55</td><td>yes</td><td>MAC-bound</td></tr>
+        <tr><td>512</td><td>7.19 ms</td><td>607</td><td>457.9</td><td>0.304</td><td>1.65</td><td>yes</td><td>MAC-bound</td></tr>
+        <tr><td>768</td><td>7.19 ms</td><td>607</td><td>581.1</td><td>0.239</td><td>1.65</td><td></td><td>MAC-bound</td></tr>
+        <tr><td>1024</td><td>7.19 ms</td><td>607</td><td>695.2</td><td>0.200</td><td>1.65</td><td></td><td>MAC-bound</td></tr>
+        <tr><td>2048</td><td>7.19 ms</td><td>607</td><td>1182.3 (&gt; reticle)</td><td>0.118</td><td>1.65</td><td></td><td>MAC-bound</td></tr>
+        <tr><td>4096</td><td>7.19 ms</td><td>607</td><td>2180.5 (&gt; reticle)</td><td>0.064</td><td>1.65</td><td></td><td>MAC-bound</td></tr>
+    </table>
+    </div>
+    <p class="src">Source: <a href="https://github.com/BrendanJamesLynskey/FHE_Accelerator_Sim/blob/main/examples/results.md">examples/results.md</a>, 22. Scratchpad size</p>
+    <ul>
+        <li><strong>Past 512 MiB, SRAM costs area and buys nothing</strong>: the latency is flat at 7.19 ms while perf/mm&sup2; falls from 0.354 (256 MiB) to 0.200 (1 GiB). Beyond about 2 GiB no reticle could print the die at all.</li>
+        <li><strong>Compute or SRAM?</strong> From a 256 MiB design running the baseline algorithm (memory-bound), +128 MiB of SRAM saves 3.74 ms per 100 mm&sup2; added, and 2&times; NTT + MAC only 0.21. With all three techniques it is MAC-bound and the two are even (1.71 against 1.68). The general treatment is <a href="https://brendanjameslynskey.github.io/SimEng_13_PPA_Tradeoffs/">SimEng 13: Power, Performance and Area</a>.</li>
     </ul>
 </section>
 
@@ -1695,6 +1718,83 @@
         };
     }
 
+    // ── power, performance and area (port of ppa.py; see its docstring for every source) ──
+    // Exact with Python except Math.exp/expm1 in the yield models (tested with a tolerance).
+    const CACTI_LSTP_22NM = [[64, 0.9189], [128, 0.8901], [256, 0.9020], [512, 0.8774], [1024, 0.8189], [2048, 0.7995]];
+    function areaModel(o) {
+        const am = Object.assign({ node: '7 nm (ASAP7-class predictive PDK, as used by ARK and BTS)', sramCurve: CACTI_LSTP_22NM,
+            sramNodeScale: 229.2 / 512 / 0.8774, mm2PerBfly: 57.2 / 8192, mm2PerMacLane: 18.2 / 8192, mm2PerAutoWord: 20.6 / 1024,
+            hbmStackGbps: 500.0, mm2PerHbmStack: 29.6 / 2, uncoreFrac: (42.8 + 20.6) / 325.2, converterGsps: 50.0, mm2PerDac: 0.05,
+            mm2PerAdc: 0.10, photonicDieMm2: 100.0 }, o);
+        am.sramMm2PerMib = mib => {
+            const c = am.sramCurve;
+            let per;
+            if (mib <= c[0][0]) per = c[0][1];
+            else if (mib >= c[c.length - 1][0]) per = c[c.length - 1][1];
+            else {
+                let i = 1;
+                while (c[i][0] < mib) i++;
+                const [x0, y0] = c[i - 1], [x1, y1] = c[i];
+                per = y0 + (y1 - y0) * (mib - x0) / (x1 - x0);
+            }
+            return per * am.sramNodeScale;
+        };
+        return am;
+    }
+    const AREA_7NM = areaModel({});
+    function areaMm2(hw, am) {
+        am = am || hw.area || AREA_7NM;
+        const ntt = hw.nttBflyPerCycle * am.mm2PerBfly, mac = hw.macLanes * am.mm2PerMacLane, auto = hw.autoWordsPerCycle * am.mm2PerAutoWord;
+        const sram = hw.sramMib * am.sramMm2PerMib(hw.sramMib);
+        const uncore = (ntt + mac + auto + sram) * am.uncoreFrac;
+        const hbmPhy = Math.ceil(hw.hbmGbps / am.hbmStackGbps) * am.mm2PerHbmStack;
+        let optE = 0.0, photonic = 0.0;
+        if (hw.optical) {
+            const ch = Math.ceil(hw.optical.samplesPerS / (am.converterGsps * 1e9));
+            optE = ch * (am.mm2PerDac + am.mm2PerAdc);
+            photonic = am.photonicDieMm2;
+        }
+        const die = ntt + mac + auto + sram + uncore + hbmPhy + optE;
+        return { ntt, mac, auto, sram, uncore, hbmPhy, opticalElectronic: optE, die, photonicDie: photonic, total: die + photonic };
+    }
+    const DIE_COST = { d0PerCm2: 0.1, waferMm: 300.0, waferUsd: 10000.0, reticleMm2: 858.0, yieldModel: 'murphy' };
+    const poissonYield = (a, d0) => Math.exp(-(a / 100.0) * d0);
+    function murphyYield(a, d0) {
+        const x = (a / 100.0) * d0;
+        if (x === 0) return 1.0;
+        const t = -Math.expm1(-x) / x;   // not 1 - exp(-x): it cancels for tiny dies
+        return t * t;
+    }
+    function diesPerWafer(a, waferMm = 300.0) {
+        const r = waferMm / 2.0;
+        const n = Math.PI * r * r / a - Math.PI * waferMm / Math.sqrt(2.0 * a);
+        return Math.max(0, Math.floor(n));
+    }
+    function dieCost(area, dc) {
+        dc = Object.assign({}, DIE_COST, dc);
+        const dpw = diesPerWafer(area, dc.waferMm), yp = poissonYield(area, dc.d0PerCm2), ym = murphyYield(area, dc.d0PerCm2);
+        const y = dc.yieldModel === 'murphy' ? ym : yp, good = dpw * y;
+        return { areaMm2: area, diesPerWafer: dpw, poisson: yp, murphy: ym, yield: y, goodDies: good,
+                 usdPerGoodDie: good > 0 ? dc.waferUsd / good : Infinity, fitsReticle: area <= dc.reticleMm2 };
+    }
+    function ppaMetrics(m, hw, am, dc) {
+        am = am || hw.area || AREA_7NM;
+        const a = areaMm2(hw, am), t = m.perBootstrapS, e = m.energy.perBootstrapJ;
+        const cost = dieCost(a.die, dc);
+        let usd = cost.usdPerGoodDie;
+        if (a.photonicDie > 0) usd = usd + dieCost(a.photonicDie, dc).usdPerGoodDie;
+        const perf = 1.0 / t;
+        return { areaMm2: a, node: am.node, dieCost: cost, usdPerUnit: usd, perfPerS: perf, perfPerW: 1.0 / e,
+                 perfPerMm2: perf / a.total, perfPerUsd: perf / usd, edpJs: e * t, ed2pJs2: e * t * t };
+    }
+    function dominates(a, b, keys) {
+        let better = false;
+        for (const k of keys) { if (a[k] > b[k]) return false; if (a[k] < b[k]) better = true; }
+        return better;
+    }
+    const paretoNd = (rows, keys = ['latencyS', 'energyJ', 'areaMm2']) =>
+        rows.filter(r => !rows.some(o => o !== r && dominates(o, r, keys)));
+
     // ── convenience for the parity test and the deck ─────────────────
     const camel = o => { const m = { n_boot: 'nBoot', min_ks: 'minKs', seeded_keys: 'seededKeys', otf_plaintexts: 'otfPlaintexts', lazy_moddown: 'lazyModdown', stc_first: 'stcFirst' }, out = {};
         for (const [k, v] of Object.entries(o || {})) out[m[k] || k] = v; return out; };
@@ -1704,7 +1804,8 @@
         return simulate(bootstrapTrace(p, camel(opts)), hw, { dvfs: !!dvfs });
     }
     root.FheSim = { PARAMS, ACCELERATORS, STAGES, UNITS, mkParams, bootstrapTrace, heOpTrace, summariseTrace, accelerator, optical, withHw,
-                    costModel, simulate, summarise, simulateNamed, dftSplit };
+                    costModel, simulate, summarise, simulateNamed, dftSplit,
+                    areaModel, AREA_7NM, areaMm2, DIE_COST, poissonYield, murphyYield, diesPerWafer, dieCost, ppaMetrics, dominates, paretoNd };
 })(typeof window !== 'undefined' ? window : globalThis);
 
     </script>
